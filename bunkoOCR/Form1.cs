@@ -16,7 +16,8 @@ namespace bunkoOCR
 {
     public partial class Form1 : Form
     {
-        private StreamWriter _writer;
+        private Stream _stream;
+        private BinaryWriter _writer;
         private Process _process;
         private Dictionary<string, double> _dictionary;
 
@@ -31,6 +32,7 @@ namespace bunkoOCR
             _dictionary["line_valueth"] = 0.5;
             _dictionary["detect_cut_off"] = 0.5;
             _dictionary["resize"] = 1;
+            _dictionary["sleep_wait"] = 0;
 
             string[] lines;
             try
@@ -73,6 +75,7 @@ namespace bunkoOCR
                         CreateNoWindow = true,
                         RedirectStandardOutput = true,
                         RedirectStandardInput = true,
+                        StandardOutputEncoding = Encoding.UTF8,
                     };
 
                     process.OutputDataReceived += OnStdOut;
@@ -81,7 +84,8 @@ namespace bunkoOCR
 
                     process.BeginOutputReadLine();
 
-                    _writer = process.StandardInput;
+                    _stream = process.StandardInput.BaseStream;
+                    _writer = new BinaryWriter(_stream);
 
                     process.WaitForExit();
 
@@ -92,15 +96,17 @@ namespace bunkoOCR
 
             Task.Run(async () =>
             {
-                while(_writer == null)
+                while(_stream == null)
                 {
                     await Task.Delay(1000);
                 }
                 foreach (string key in _dictionary.Keys)
                 {
                     var value = _dictionary[key];
-                    var str = key + ":" + value.ToString();
-                    _writer.WriteLine(str);
+                    var str = key + ":" + value.ToString() + "\r\n";
+                    var b = Encoding.UTF8.GetBytes(str);
+                    _writer.Write(b);
+                    _writer.Flush();
                 }
             });
         }
@@ -108,7 +114,9 @@ namespace bunkoOCR
         private void process(string filename)
         {
             listBox1.Items.Add(filename);
-            _writer.WriteLine(filename);
+            var b = Encoding.UTF8.GetBytes(filename + "\r\n");
+            _writer.Write(b);
+            _writer.Flush();
         }
 
         public void OnStdOut(object sender, DataReceivedEventArgs e)
@@ -322,7 +330,9 @@ namespace bunkoOCR
 
                 var str = param+":"+value.ToString();
                 _dictionary[param] = value;
-                _writer.WriteLine(str);
+                var b = Encoding.UTF8.GetBytes(str + "\r\n");
+                _writer.Write(b);
+                _writer.Flush();
             }
             catch (Exception)
             {

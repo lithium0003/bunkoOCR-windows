@@ -1,5 +1,6 @@
 #pragma once
 
+#include <onnxruntime_cxx_api.h>
 
 #include <Windows.h>
 #include <gdiplus.h>

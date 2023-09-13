@@ -1,6 +1,9 @@
 #include "CodeDecoder.h"
+#include <onnxruntime/core/providers/dml/dml_provider_factory.h>
 
 #include "util_func.h"
+
+extern bool useDirectML;
 
 CodeDecoder::CodeDecoder():
     env(ORT_LOGGING_LEVEL_FATAL),
@@ -25,6 +28,22 @@ CodeDecoder::CodeDecoder():
             sessionOptions.AppendExecutionProvider_CUDA_V2(*cuda_options);
             session = Ort::Session(env, L"CodeDecoder.onnx", sessionOptions);
             std::cout << "tensorRT" << std::endl;
+        }
+        catch (...) {
+            success = false;
+        }
+    }
+
+    if (!success && useDirectML) {
+        success = true;
+        try {
+            sessionOptions = Ort::SessionOptions();
+            sessionOptions.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
+            sessionOptions.DisableMemPattern();
+            sessionOptions.SetExecutionMode(ORT_SEQUENTIAL);
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+            session = Ort::Session(env, L"CodeDecoder.onnx", sessionOptions);
+            std::cout << "DirectML" << std::endl;
         }
         catch (...) {
             success = false;

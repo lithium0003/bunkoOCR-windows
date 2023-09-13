@@ -1,27 +1,17 @@
 #include "TextDetector.h"
+#include <onnxruntime/core/providers/dml/dml_provider_factory.h>
 
 double blank_cutoff = 35;
 float detect_cut_off = 0.5;
+
+extern bool useDirectML;
 
 TextDetector::TextDetector() :
     env(ORT_LOGGING_LEVEL_FATAL),
     session(env, L"TextDetector.onnx", sessionOptions),
     inputTensor(Ort::Value::CreateTensor<float>(memory_info, input.data(), input.size(), inputShape.data(), inputShape.size()))
-{    
+{   
     bool success = false;
-    if (!success) {
-        success = true;
-        try {
-            sessionOptions = Ort::SessionOptions();
-            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(&sessionOptions, 0));
-            session = Ort::Session(env, L"TextDetector.onnx", sessionOptions);
-            std::cout << "DirectML" << std::endl;
-        }
-        catch (...) {
-            success = false;
-        }
-    }
-
     if (!success) {
         success = true;
         try {
@@ -38,6 +28,22 @@ TextDetector::TextDetector() :
             sessionOptions.AppendExecutionProvider_CUDA_V2(*cuda_options);
             session = Ort::Session(env, L"TextDetector.onnx", sessionOptions);
             std::cout << "tensorRT" << std::endl;
+        }
+        catch (...) {
+            success = false;
+        }
+    }
+
+    if (!success && useDirectML) {
+        success = true;
+        try {
+            sessionOptions = Ort::SessionOptions();
+            sessionOptions.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
+            sessionOptions.DisableMemPattern();
+            sessionOptions.SetExecutionMode(ORT_SEQUENTIAL);
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+            session = Ort::Session(env, L"TextDetector.onnx", sessionOptions);
+            std::cout << "DirectML" << std::endl;
         }
         catch (...) {
             success = false;

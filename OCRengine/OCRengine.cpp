@@ -16,6 +16,9 @@
 #include "line_detect.h"
 #include "Transformer.h"
 
+#pragma	comment(lib,"onnxruntime.lib")
+#pragma	comment(lib,"onnxruntime_providers_dml.lib")
+
 extern double blank_cutoff;
 extern double ruby_cutoff;
 extern double rubybase_cutoff;
@@ -23,6 +26,7 @@ extern double space_cutoff;
 extern float line_valueth;
 extern float detect_cut_off;
 double resize = 1.0;
+int sleep_wait = 0;
 
 std::vector<float> make_feature_input(const std::vector<int>& boxes, std::vector<float>& glyphfeatures)
 {
@@ -291,12 +295,20 @@ void WriteJson(std::ostream& stream, const std::vector<int>& boxes, const std::v
     stream << "}" << std::endl;
 }
 
+std::wstring ToUnicodeStr(const std::string &utf8str)
+{
+    int needLength = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, nullptr, 0);
+    std::wstring result;
+    result.resize(needLength - 1);
+    MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &result[0], needLength);
+    return result;
+}
 
 int process(std::string input_filename, TextDetector& model1, CodeDecoder& model2, Transformer& model3)
 {
     int width = 0;
     int height = 0;
-    std::wstring wfilename(input_filename.begin(), input_filename.end());
+    std::wstring wfilename = ToUnicodeStr(input_filename);
     auto bitmap = Gdiplus::Bitmap::FromFile(wfilename.c_str(), true);
     if (bitmap == nullptr) {
         std::cerr << "faild to load image" << std::endl;
@@ -415,8 +427,19 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
     return 0;
 }
 
+#include <d3d12.h>
+#pragma comment(lib, "d3d12.lib")
+#include <dxgi1_4.h>
+#pragma comment(lib, "dxgi.lib")
+
+#include <wrl/client.h>
+
+using Microsoft::WRL::ComPtr;
+
 Gdiplus::GdiplusStartupInput gdiSI;
 ULONG_PTR gdiToken;
+
+bool useDirectML = false;
 
 int main(int argc, char **argv)
 {
@@ -428,6 +451,21 @@ int main(int argc, char **argv)
     auto providers = Ort::GetAvailableProviders();
     for (auto s : providers) {
         std::cout << s << std::endl;
+    }
+
+    ComPtr<IDXGIFactory4> pFactory;
+    if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&pFactory)))) {
+        IDXGIAdapter3* pAdapter;
+        if (pFactory->EnumAdapters1(0, reinterpret_cast<IDXGIAdapter1**>(&pAdapter)) == S_OK) {
+            DXGI_QUERY_VIDEO_MEMORY_INFO info;
+            pAdapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
+
+            std::cout << info.AvailableForReservation / 1024.0 / 1024 << "MiB meomry" << std::endl;
+
+            if (info.AvailableForReservation > (UINT64)2 * 1024 * 1024 * 1024) {
+                useDirectML = true;
+            }
+        }
     }
 
     bool stdin_filename = false;
@@ -458,6 +496,7 @@ int main(int argc, char **argv)
         "line_valueth:",
         "detect_cut_off:",
         "resize:",
+        "sleep_wait:",
     };
 
     while (std::getline(std::cin, input_filename)) {
@@ -487,6 +526,9 @@ int main(int argc, char **argv)
                 else if (s == "resize:") {
                     resize = v;
                 }
+                else if (s == "sleep_wait:") {
+                    sleep_wait = v;
+                }
                 goto nextloop;
             }
         }
@@ -494,6 +536,9 @@ int main(int argc, char **argv)
         ret = process(input_filename, model1, model2, model3);
         if (ret != 0) {
             std::cout << "error: " << input_filename << std::endl;
+        }
+        if (sleep_wait > 0) {
+            Sleep(sleep_wait * 1000);
         }
     nextloop:
         ;
