@@ -463,7 +463,7 @@ int main(int argc, char **argv)
             if (SUCCEEDED(pAdapter->GetDesc(&desc))){
                 std::cout << desc.DedicatedVideoMemory / 1024.0 / 1024 << "MiB meomry" << std::endl;
 
-                if (desc.DedicatedVideoMemory > (UINT64)2 * 1024 * 1024 * 1024) {
+                if (desc.DedicatedVideoMemory > (UINT64)1800 * 1024 * 1024) {
                     useDirectML = true;
                     device = desc.AdapterLuid;
                 }
