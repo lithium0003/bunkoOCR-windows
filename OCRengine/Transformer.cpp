@@ -4,6 +4,7 @@
 #include "util_func.h"
 
 extern bool useDirectML;
+extern int useDirectML_idx;
 
 Transformer::Transformer():
     env(ORT_LOGGING_LEVEL_FATAL),
@@ -44,7 +45,7 @@ Transformer::Transformer():
             sessionOptions.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
             sessionOptions.DisableMemPattern();
             sessionOptions.SetExecutionMode(ORT_SEQUENTIAL);
-            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, useDirectML_idx));
             session_encoder = Ort::Session(env, L"TransformerEncoder.onnx", sessionOptions);
             session_decoder = Ort::Session(env, L"TransformerDecoder.onnx", sessionOptions);
             std::cout << "DirectML" << std::endl;

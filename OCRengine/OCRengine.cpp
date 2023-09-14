@@ -419,7 +419,7 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
         txt += UTF32toUTF8(i);
     }
 
-    std::ofstream ofs(input_filename + ".json");
+    std::ofstream ofs(wfilename + TEXT(".json"));
     WriteJson(ofs, boxes, locations, codes, txt);
 
     std::cout << "done: " << input_filename << std::endl;
@@ -429,7 +429,7 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
 
 #include <d3d12.h>
 #pragma comment(lib, "d3d12.lib")
-#include <dxgi1_4.h>
+#include <dxgi1_6.h>
 #pragma comment(lib, "dxgi.lib")
 
 #include <wrl/client.h>
@@ -440,6 +440,7 @@ Gdiplus::GdiplusStartupInput gdiSI;
 ULONG_PTR gdiToken;
 
 bool useDirectML = false;
+int useDirectML_idx = 0;
 
 int main(int argc, char **argv)
 {
@@ -453,18 +454,35 @@ int main(int argc, char **argv)
         std::cout << s << std::endl;
     }
 
-    ComPtr<IDXGIFactory4> pFactory;
+    ComPtr<IDXGIFactory6> pFactory;
+    LUID device;
     if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&pFactory)))) {
-        IDXGIAdapter3* pAdapter;
-        if (pFactory->EnumAdapters1(0, reinterpret_cast<IDXGIAdapter1**>(&pAdapter)) == S_OK) {
-            DXGI_QUERY_VIDEO_MEMORY_INFO info;
-            pAdapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info);
+        IDXGIAdapter1* pAdapter = nullptr;
+        if (SUCCEEDED(pFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&pAdapter)))) {
+            DXGI_ADAPTER_DESC desc;
+            if (SUCCEEDED(pAdapter->GetDesc(&desc))){
+                std::cout << desc.DedicatedVideoMemory / 1024.0 / 1024 << "MiB meomry" << std::endl;
 
-            std::cout << info.AvailableForReservation / 1024.0 / 1024 << "MiB meomry" << std::endl;
-
-            if (info.AvailableForReservation > (UINT64)2 * 1024 * 1024 * 1024) {
-                useDirectML = true;
+                if (desc.DedicatedVideoMemory > (UINT64)2 * 1024 * 1024 * 1024) {
+                    useDirectML = true;
+                    device = desc.AdapterLuid;
+                }
             }
+            pAdapter->Release();
+        }
+        for (UINT adapterIndex = 0; ; ++adapterIndex) {
+            if (pFactory->EnumAdapters1(adapterIndex, &pAdapter) == DXGI_ERROR_NOT_FOUND) {
+                break;
+            }
+
+            DXGI_ADAPTER_DESC desc;
+            if (SUCCEEDED(pAdapter->GetDesc(&desc))) {
+                if (desc.AdapterLuid.HighPart == device.HighPart && desc.AdapterLuid.LowPart == device.LowPart) {
+                    useDirectML_idx = adapterIndex;
+                }
+            }
+
+            pAdapter->Release();
         }
     }
 

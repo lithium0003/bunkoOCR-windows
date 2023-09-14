@@ -4,6 +4,7 @@
 #include "util_func.h"
 
 extern bool useDirectML;
+extern int useDirectML_idx;
 
 CodeDecoder::CodeDecoder():
     env(ORT_LOGGING_LEVEL_FATAL),
@@ -41,7 +42,7 @@ CodeDecoder::CodeDecoder():
             sessionOptions.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
             sessionOptions.DisableMemPattern();
             sessionOptions.SetExecutionMode(ORT_SEQUENTIAL);
-            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, 0));
+            Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(sessionOptions, useDirectML_idx));
             session = Ort::Session(env, L"CodeDecoder.onnx", sessionOptions);
             std::cout << "DirectML" << std::endl;
         }
