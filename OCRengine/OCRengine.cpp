@@ -300,7 +300,7 @@ std::wstring ToUnicodeStr(const std::string &utf8str)
     int needLength = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, nullptr, 0);
     std::wstring result;
     result.resize(needLength - 1);
-    MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &result[0], needLength);
+    MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &result[0], result.size());
     return result;
 }
 

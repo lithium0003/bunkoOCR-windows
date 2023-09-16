@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -20,6 +21,7 @@ namespace bunkoOCR
         private BinaryWriter _writer;
         private Process _process;
         private Dictionary<string, double> _dictionary;
+        private ConcurrentQueue<byte[]> _queue;
 
         public Form1()
         {
@@ -33,6 +35,7 @@ namespace bunkoOCR
             _dictionary["detect_cut_off"] = 0.5;
             _dictionary["resize"] = 1;
             _dictionary["sleep_wait"] = 0;
+            _queue = new ConcurrentQueue<byte[]>();
 
             string[] lines;
             try
@@ -88,9 +91,27 @@ namespace bunkoOCR
                     _writer = new BinaryWriter(_stream);
 
                     process.WaitForExit();
+                    _queue.Enqueue(null);
 
                     process.CancelOutputRead();
                     _process = null;
+                }
+            });
+
+            Task.Run(async () =>
+            {
+                while(_process != null)
+                {
+                    if(_queue.TryDequeue(out var b))
+                    {
+                        if (b == null) break;
+                        _writer.Write(b);
+                        _writer.Flush();
+                    }
+                    else
+                    {
+                        await Task.Delay(1000);
+                    }
                 }
             });
 
@@ -105,8 +126,7 @@ namespace bunkoOCR
                     var value = _dictionary[key];
                     var str = key + ":" + value.ToString() + "\r\n";
                     var b = Encoding.UTF8.GetBytes(str);
-                    _writer.Write(b);
-                    _writer.Flush();
+                    _queue.Enqueue(b);
                 }
             });
         }
@@ -115,8 +135,7 @@ namespace bunkoOCR
         {
             listBox1.Items.Add(filename);
             var b = Encoding.UTF8.GetBytes(filename + "\r\n");
-            _writer.Write(b);
-            _writer.Flush();
+            _queue.Enqueue(b);
         }
 
         public void OnStdOut(object sender, DataReceivedEventArgs e)
@@ -331,8 +350,7 @@ namespace bunkoOCR
                 var str = param+":"+value.ToString();
                 _dictionary[param] = value;
                 var b = Encoding.UTF8.GetBytes(str + "\r\n");
-                _writer.Write(b);
-                _writer.Flush();
+                _queue.Enqueue(b);
             }
             catch (Exception)
             {
