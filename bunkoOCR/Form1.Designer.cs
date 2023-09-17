@@ -171,6 +171,7 @@
             this.checkBox3.TabIndex = 9;
             this.checkBox3.Text = "HTMLを出力";
             this.checkBox3.UseVisualStyleBackColor = true;
+            this.checkBox3.CheckedChanged += new System.EventHandler(this.checkBox3_CheckedChanged);
             // 
             // checkBox2
             // 
@@ -183,6 +184,7 @@
             this.checkBox2.TabIndex = 8;
             this.checkBox2.Text = "青空形式のテキストtxtを出力";
             this.checkBox2.UseVisualStyleBackColor = true;
+            this.checkBox2.CheckedChanged += new System.EventHandler(this.checkBox2_CheckedChanged);
             // 
             // checkBox1
             // 
@@ -195,6 +197,7 @@
             this.checkBox1.TabIndex = 7;
             this.checkBox1.Text = "ふりがな無しのテキストtxtを出力";
             this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
             // splitter2
             // 

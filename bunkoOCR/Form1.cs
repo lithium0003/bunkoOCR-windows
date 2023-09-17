@@ -23,6 +23,11 @@ namespace bunkoOCR
         private Dictionary<string, double> _dictionary;
         private ConcurrentQueue<byte[]> _queue;
 
+        bool txtoutput = true;
+        bool aozoraoutput = true;
+        bool htmloutput = true;
+        bool ready = false;
+
         public Form1()
         {
             InitializeComponent();
@@ -68,9 +73,32 @@ namespace bunkoOCR
 
             Task.Run(() =>
             {
+                int gpu_id = 255;
+
+                using (var process = new Process())
+                {
+                    process.StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "detectGPU.exe",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                    };
+
+                    process.Start();
+                    process.WaitForExit();
+                    gpu_id = process.ExitCode;
+                }
+
+                string arg = "";
+                if (gpu_id != 255)
+                {
+                    arg = gpu_id.ToString();
+                }
+
                 using (var process = new Process())
                 {
                     _process = process;
+                    ready = true;
                     process.StartInfo = new ProcessStartInfo()
                     {
                         FileName = "OCRengine.exe",
@@ -79,6 +107,7 @@ namespace bunkoOCR
                         RedirectStandardOutput = true,
                         RedirectStandardInput = true,
                         StandardOutputEncoding = Encoding.UTF8,
+                        Arguments = arg,
                     };
 
                     process.OutputDataReceived += OnStdOut;
@@ -100,9 +129,13 @@ namespace bunkoOCR
 
             Task.Run(async () =>
             {
-                while(_process != null)
+                while(!ready)
                 {
-                    if(_queue.TryDequeue(out var b))
+                    await Task.Delay(1000);
+                }
+                while (_process != null)
+                {
+                    if (_queue.TryDequeue(out var b))
                     {
                         if (b == null) break;
                         _writer.Write(b);
@@ -216,9 +249,6 @@ namespace bunkoOCR
 
         private void postprocess(string filename)
         {
-            bool txtoutput = checkBox1.Checked;
-            bool aozoraoutput = checkBox2.Checked;
-            bool htmloutput = checkBox3.Checked;
             if(!txtoutput && !aozoraoutput && !htmloutput)
             {
                 return;
@@ -356,6 +386,21 @@ namespace bunkoOCR
             {
                 return;
             }
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            txtoutput = checkBox1.Checked;
+        }
+
+        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            aozoraoutput = checkBox2.Checked;
+        }
+
+        private void checkBox3_CheckedChanged(object sender, EventArgs e)
+        {
+            htmloutput = checkBox3.Checked;
         }
     }
 

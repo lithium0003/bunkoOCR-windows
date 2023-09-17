@@ -22,7 +22,7 @@ Transformer::Transformer():
             OrtTensorRTProviderOptionsV2* tensorrt_options = nullptr;
             Ort::ThrowOnError(api.CreateTensorRTProviderOptions(&tensorrt_options));
             std::vector<const char*> keys{ "trt_max_workspace_size", "trt_engine_cache_enable", "trt_engine_cache_path" };
-            std::vector<const char*> values{ "4294967296", "true", "cache" };
+            std::vector<const char*> values{ "4294967296", "1", "cache" };
             Ort::ThrowOnError(api.UpdateTensorRTProviderOptions(tensorrt_options, keys.data(), values.data(), 3));
             OrtCUDAProviderOptionsV2* cuda_options = nullptr;
             Ort::ThrowOnError(api.CreateCUDAProviderOptions(&cuda_options));

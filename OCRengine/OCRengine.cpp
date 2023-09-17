@@ -299,8 +299,10 @@ std::wstring ToUnicodeStr(const std::string &utf8str)
 {
     int needLength = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, nullptr, 0);
     std::wstring result;
-    result.resize(needLength - 1);
-    MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &result[0], result.size());
+    if (needLength > 0) {
+        result.resize(needLength - 1);
+        MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &result[0], result.size());
+    }
     return result;
 }
 
@@ -311,12 +313,12 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
     std::wstring wfilename = ToUnicodeStr(input_filename);
     auto bitmap = Gdiplus::Bitmap::FromFile(wfilename.c_str(), true);
     if (bitmap == nullptr) {
-        std::cerr << "faild to load image" << std::endl;
+        std::cerr << "faild to load image " << input_filename << std::endl;
         return 1;
     }
     if (bitmap->GetLastStatus() != Gdiplus::Ok) {
         delete bitmap;
-        std::cerr << "faild to load image" << std::endl;
+        std::cerr << "faild to load image status" << input_filename << std::endl;
         return 1;
     }
     auto rotation = Gdiplus::RotateFlipType::RotateNoneFlipNone;
@@ -427,15 +429,6 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
     return 0;
 }
 
-#include <d3d12.h>
-#pragma comment(lib, "d3d12.lib")
-#include <dxgi1_6.h>
-#pragma comment(lib, "dxgi.lib")
-
-#include <wrl/client.h>
-
-using Microsoft::WRL::ComPtr;
-
 Gdiplus::GdiplusStartupInput gdiSI;
 ULONG_PTR gdiToken;
 
@@ -446,7 +439,7 @@ int main(int argc, char **argv)
 {
     if (Gdiplus::GdiplusStartup(&gdiToken, &gdiSI, NULL) != Gdiplus::Ok) {
         std::cerr << "GdiplusStartup() faild" << std::endl;
-        return 1;
+        return -1;
     }
 
     auto providers = Ort::GetAvailableProviders();
@@ -454,41 +447,14 @@ int main(int argc, char **argv)
         std::cout << s << std::endl;
     }
 
-    ComPtr<IDXGIFactory6> pFactory;
-    LUID device;
-    if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&pFactory)))) {
-        IDXGIAdapter1* pAdapter = nullptr;
-        if (SUCCEEDED(pFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&pAdapter)))) {
-            DXGI_ADAPTER_DESC desc;
-            if (SUCCEEDED(pAdapter->GetDesc(&desc))){
-                std::cout << desc.DedicatedVideoMemory / 1024.0 / 1024 << "MiB meomry" << std::endl;
-
-                if (desc.DedicatedVideoMemory > (UINT64)1800 * 1024 * 1024) {
-                    useDirectML = true;
-                    device = desc.AdapterLuid;
-                }
-            }
-            pAdapter->Release();
+    if (argc > 1) {
+        std::stringstream(argv[1]) >> useDirectML_idx;
+        if (useDirectML_idx < 0 || useDirectML_idx == 255) {
+            useDirectML = false;
         }
-        for (UINT adapterIndex = 0; ; ++adapterIndex) {
-            if (pFactory->EnumAdapters1(adapterIndex, &pAdapter) == DXGI_ERROR_NOT_FOUND) {
-                break;
-            }
-
-            DXGI_ADAPTER_DESC desc;
-            if (SUCCEEDED(pAdapter->GetDesc(&desc))) {
-                if (desc.AdapterLuid.HighPart == device.HighPart && desc.AdapterLuid.LowPart == device.LowPart) {
-                    useDirectML_idx = adapterIndex;
-                }
-            }
-
-            pAdapter->Release();
+        else {
+            useDirectML = true;
         }
-    }
-
-    bool stdin_filename = false;
-    if (argc < 2) {
-        stdin_filename = true;
     }
     std::cout << "process start" << std::endl;
 
@@ -497,14 +463,6 @@ int main(int argc, char **argv)
     static Transformer model3;
 
     std::cout << "ready" << std::endl;
-
-    std::string input_filename;
-    if (!stdin_filename) {
-        input_filename = argv[1];
-        int ret = process(input_filename, model1, model2, model3);
-        Gdiplus::GdiplusShutdown(gdiToken);
-        return ret;
-    }
 
     std::vector<std::string> params = {
         "blank_cutoff:",
@@ -517,6 +475,7 @@ int main(int argc, char **argv)
         "sleep_wait:",
     };
 
+    std::string input_filename;
     while (std::getline(std::cin, input_filename)) {
         int ret;
         for (auto s : params) {
@@ -547,6 +506,7 @@ int main(int argc, char **argv)
                 else if (s == "sleep_wait:") {
                     sleep_wait = v;
                 }
+                std::cout << s << v << std::endl;
                 goto nextloop;
             }
         }
