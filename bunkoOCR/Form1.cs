@@ -40,6 +40,7 @@ namespace bunkoOCR
             _dictionary["detect_cut_off"] = 0.5;
             _dictionary["resize"] = 1;
             _dictionary["sleep_wait"] = 0;
+            _dictionary["use_GPU"] = 1;
             _queue = new ConcurrentQueue<byte[]>();
 
             string[] lines;
@@ -75,18 +76,21 @@ namespace bunkoOCR
             {
                 int gpu_id = 255;
 
-                using (var process = new Process())
+                if(_dictionary["use_GPU"] > 0)
                 {
-                    process.StartInfo = new ProcessStartInfo()
+                    using (var process = new Process())
                     {
-                        FileName = "detectGPU.exe",
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                    };
+                        process.StartInfo = new ProcessStartInfo()
+                        {
+                            FileName = "detectGPU.exe",
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                        };
 
-                    process.Start();
-                    process.WaitForExit();
-                    gpu_id = process.ExitCode;
+                        process.Start();
+                        process.WaitForExit();
+                        gpu_id = process.ExitCode;
+                    }
                 }
 
                 string arg = "";

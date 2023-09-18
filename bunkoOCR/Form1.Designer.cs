@@ -69,7 +69,7 @@
             // textBox1
             // 
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.textBox1.Location = new System.Drawing.Point(0, 906);
+            this.textBox1.Location = new System.Drawing.Point(0, 875);
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
             this.textBox1.Size = new System.Drawing.Size(1290, 25);
@@ -167,7 +167,7 @@
             this.checkBox3.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox3.Location = new System.Drawing.Point(182, 59);
             this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(130, 22);
+            this.checkBox3.Size = new System.Drawing.Size(123, 22);
             this.checkBox3.TabIndex = 9;
             this.checkBox3.Text = "HTMLを出力";
             this.checkBox3.UseVisualStyleBackColor = true;
@@ -180,7 +180,7 @@
             this.checkBox2.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox2.Location = new System.Drawing.Point(182, 35);
             this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(247, 22);
+            this.checkBox2.Size = new System.Drawing.Size(240, 22);
             this.checkBox2.TabIndex = 8;
             this.checkBox2.Text = "青空形式のテキストtxtを出力";
             this.checkBox2.UseVisualStyleBackColor = true;
@@ -193,7 +193,7 @@
             this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox1.Location = new System.Drawing.Point(182, 12);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(262, 22);
+            this.checkBox1.Size = new System.Drawing.Size(255, 22);
             this.checkBox1.TabIndex = 7;
             this.checkBox1.Text = "ふりがな無しのテキストtxtを出力";
             this.checkBox1.UseVisualStyleBackColor = true;
@@ -216,7 +216,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 90);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1290, 816);
+            this.panel1.Size = new System.Drawing.Size(1290, 785);
             this.panel1.TabIndex = 10;
             // 
             // listBox2
@@ -226,14 +226,14 @@
             this.listBox2.ItemHeight = 18;
             this.listBox2.Location = new System.Drawing.Point(591, 0);
             this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(699, 816);
+            this.listBox2.Size = new System.Drawing.Size(699, 785);
             this.listBox2.TabIndex = 2;
             // 
             // splitter1
             // 
             this.splitter1.Location = new System.Drawing.Point(581, 0);
             this.splitter1.Name = "splitter1";
-            this.splitter1.Size = new System.Drawing.Size(10, 816);
+            this.splitter1.Size = new System.Drawing.Size(10, 785);
             this.splitter1.TabIndex = 1;
             this.splitter1.TabStop = false;
             // 
@@ -244,7 +244,7 @@
             this.listBox1.ItemHeight = 18;
             this.listBox1.Location = new System.Drawing.Point(0, 0);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(581, 816);
+            this.listBox1.Size = new System.Drawing.Size(581, 785);
             this.listBox1.TabIndex = 0;
             // 
             // Form1
@@ -252,7 +252,7 @@
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1290, 931);
+            this.ClientSize = new System.Drawing.Size(1290, 900);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.splitter2);
             this.Controls.Add(this.panel2);
