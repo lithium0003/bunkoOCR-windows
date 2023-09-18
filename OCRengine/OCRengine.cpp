@@ -473,6 +473,7 @@ int main(int argc, char **argv)
         "detect_cut_off:",
         "resize:",
         "sleep_wait:",
+        "use_GPU:",
     };
 
     std::string input_filename;
@@ -506,7 +507,6 @@ int main(int argc, char **argv)
                 else if (s == "sleep_wait:") {
                     sleep_wait = v;
                 }
-                std::cout << s << v << std::endl;
                 goto nextloop;
             }
         }
