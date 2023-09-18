@@ -25,6 +25,8 @@ extern double rubybase_cutoff;
 extern double space_cutoff;
 extern float line_valueth;
 extern float detect_cut_off;
+extern float sep_valueth;
+extern float sep_valueth2;
 double resize = 1.0;
 int sleep_wait = 0;
 
@@ -474,6 +476,8 @@ int main(int argc, char **argv)
         "resize:",
         "sleep_wait:",
         "use_GPU:",
+        "sep_valueth:",
+        "sep_valueth2:",
     };
 
     std::string input_filename;
@@ -506,6 +510,12 @@ int main(int argc, char **argv)
                 }
                 else if (s == "sleep_wait:") {
                     sleep_wait = v;
+                }
+                else if (s == "sep_valueth:") {
+                    sep_valueth = v;
+                }
+                else if (s == "sep_valueth2:") {
+                    sep_valueth2 = v;
                 }
                 goto nextloop;
             }

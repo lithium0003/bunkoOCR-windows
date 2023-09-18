@@ -41,6 +41,8 @@ namespace bunkoOCR
             _dictionary["resize"] = 1;
             _dictionary["sleep_wait"] = 0;
             _dictionary["use_GPU"] = 1;
+            _dictionary["sep_valueth"] = 0.25;
+            _dictionary["sep_valueth2"] = 0.3;
             _queue = new ConcurrentQueue<byte[]>();
 
             string[] lines;

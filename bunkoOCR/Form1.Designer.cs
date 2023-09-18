@@ -153,7 +153,9 @@
             "line_valueth",
             "detect_cut_off",
             "resize",
-            "sleep_wait"});
+            "sleep_wait",
+            "sep_valueth",
+            "sep_valueth2"});
             this.comboBox1.Location = new System.Drawing.Point(500, 12);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(175, 26);
@@ -167,7 +169,7 @@
             this.checkBox3.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox3.Location = new System.Drawing.Point(182, 59);
             this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(123, 22);
+            this.checkBox3.Size = new System.Drawing.Size(130, 22);
             this.checkBox3.TabIndex = 9;
             this.checkBox3.Text = "HTMLを出力";
             this.checkBox3.UseVisualStyleBackColor = true;
@@ -180,7 +182,7 @@
             this.checkBox2.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox2.Location = new System.Drawing.Point(182, 35);
             this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(240, 22);
+            this.checkBox2.Size = new System.Drawing.Size(247, 22);
             this.checkBox2.TabIndex = 8;
             this.checkBox2.Text = "青空形式のテキストtxtを出力";
             this.checkBox2.UseVisualStyleBackColor = true;
@@ -193,7 +195,7 @@
             this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox1.Location = new System.Drawing.Point(182, 12);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(255, 22);
+            this.checkBox1.Size = new System.Drawing.Size(262, 22);
             this.checkBox1.TabIndex = 7;
             this.checkBox1.Text = "ふりがな無しのテキストtxtを出力";
             this.checkBox1.UseVisualStyleBackColor = true;

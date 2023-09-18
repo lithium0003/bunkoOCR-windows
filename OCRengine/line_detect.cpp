@@ -18,8 +18,8 @@ double ruby_cutoff = 0.5;
 double rubybase_cutoff = 0.4;
 double space_cutoff = 0.75;
 float line_valueth = 0.5;
-const float sep_valueth = 0.25;
-const float sep_valueth2 = 0.3;
+float sep_valueth = 0.25;
+float sep_valueth2 = 0.3;
 const float sep_clusterth = 50.0;
 const int linearea_th = 50;
 
