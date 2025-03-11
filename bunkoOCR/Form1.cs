@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,8 +9,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text.Unicode;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -20,65 +23,31 @@ namespace bunkoOCR
         private Stream _stream;
         private BinaryWriter _writer;
         private Process _process;
-        private Dictionary<string, double> _dictionary;
         private ConcurrentQueue<byte[]> _queue;
 
-        bool txtoutput = true;
-        bool aozoraoutput = true;
-        bool htmloutput = true;
         bool ready = false;
+        bool restart = false;
 
-        public Form1()
+        void InitializeProcess()
         {
-            InitializeComponent();
-            _dictionary = new Dictionary<string, double>();
-            _dictionary["blank_cutoff"] = 35;
-            _dictionary["ruby_cutoff"] = 0.5;
-            _dictionary["rubybase_cutoff"] = 0.4;
-            _dictionary["space_cutoff"] = 0.75;
-            _dictionary["line_valueth"] = 0.5;
-            _dictionary["detect_cut_off"] = 0.5;
-            _dictionary["resize"] = 1;
-            _dictionary["sleep_wait"] = 0;
-            _dictionary["use_GPU"] = 1;
-            _dictionary["sep_valueth"] = 0.25;
-            _dictionary["sep_valueth2"] = 0.3;
+            var dict = ConfigReader.Load();
+
+            bool useTensorRT = dict["use_TensorRT"] > 0;
+            bool useCUDA = dict["use_CUDA"] > 0;
+            bool useDML = dict["use_DirectML"] > 0;
+            int GPU_id = (int)dict["DML_GPU_id"];
+            if (GPU_id < 0 || GPU_id > 254)
+            {
+                GPU_id = -1;
+            }
+            bool useOpenVINO = dict["use_OpenVINO"] > 0;
+            dict = ConfigReader.FilterForOCRengine(dict);
+
             _queue = new ConcurrentQueue<byte[]>();
-
-            string[] lines;
-            try
-            {
-                lines = File.ReadAllLines("param.config");
-            }
-            catch {
-                lines = new string[0];
-            }
-
-            foreach (var line in lines)
-            {
-                // keyとvalueの区切り目を見つける
-                var pos = line.IndexOf(':');
-                if (pos < 0)
-                {
-                    continue;
-                }
-
-                // key-valueを一覧に追加
-                var key = line.Substring(0, pos);
-                var val = line.Substring(pos + 1);
-                try
-                {
-                    double value = double.Parse(val);
-                    _dictionary[key] = value;
-                }
-                catch { }
-            }
 
             Task.Run(() =>
             {
-                int gpu_id = 255;
-
-                if(_dictionary["use_GPU"] > 0)
+                if (useDML && GPU_id < 0)
                 {
                     using (var process = new Process())
                     {
@@ -91,15 +60,63 @@ namespace bunkoOCR
 
                         process.Start();
                         process.WaitForExit();
-                        gpu_id = process.ExitCode;
+                        GPU_id = process.ExitCode;
                     }
                 }
 
                 string arg = "";
-                if (gpu_id != 255)
+                if (useTensorRT)
                 {
-                    arg = gpu_id.ToString();
+                    arg += "TensorRT ";
                 }
+                if (useCUDA)
+                {
+                    arg += "CUDA ";
+                }
+                if (useOpenVINO)
+                {
+                    arg += "OpenVINO ";
+                }
+                if (useDML && GPU_id != 255 && GPU_id >= 0)
+                {
+                    arg += GPU_id.ToString();
+                }
+
+                Task.Run(async () =>
+                {
+                    while (!ready)
+                    {
+                        await Task.Delay(1000);
+                    }
+                    while (_process != null)
+                    {
+                        if (_queue.TryDequeue(out var b))
+                        {
+                            if (b == null) break;
+                            _writer.Write(b);
+                            _writer.Flush();
+                        }
+                        else
+                        {
+                            await Task.Delay(1000);
+                        }
+                    }
+                });
+
+                Task.Run(async () =>
+                {
+                    while (_stream == null)
+                    {
+                        await Task.Delay(1000);
+                    }
+                    foreach (string key in dict.Keys)
+                    {
+                        var value = dict[key];
+                        var str = key + ":" + value.ToString() + "\r\n";
+                        var b = Encoding.UTF8.GetBytes(str);
+                        _queue.Enqueue(b);
+                    }
+                });
 
                 using (var process = new Process())
                 {
@@ -129,49 +146,28 @@ namespace bunkoOCR
                     _queue.Enqueue(null);
 
                     process.CancelOutputRead();
+
                     _process = null;
-                }
-            });
-
-            Task.Run(async () =>
-            {
-                while(!ready)
-                {
-                    await Task.Delay(1000);
-                }
-                while (_process != null)
-                {
-                    if (_queue.TryDequeue(out var b))
+                    _stream = null;
+                    ready = false;
+                    if(restart)
                     {
-                        if (b == null) break;
-                        _writer.Write(b);
-                        _writer.Flush();
+                        restart = false;
+                        InitializeProcess();
                     }
-                    else
-                    {
-                        await Task.Delay(1000);
-                    }
-                }
-            });
-
-            Task.Run(async () =>
-            {
-                while(_stream == null)
-                {
-                    await Task.Delay(1000);
-                }
-                foreach (string key in _dictionary.Keys)
-                {
-                    var value = _dictionary[key];
-                    var str = key + ":" + value.ToString() + "\r\n";
-                    var b = Encoding.UTF8.GetBytes(str);
-                    _queue.Enqueue(b);
                 }
             });
         }
 
+        public Form1()
+        {
+            InitializeComponent();
+            InitializeProcess();
+        }
+
         private void process(string filename)
         {
+            button_config.Enabled = false;
             listBox1.Items.Add(filename);
             var b = Encoding.UTF8.GetBytes(filename + "\r\n");
             _queue.Enqueue(b);
@@ -179,6 +175,7 @@ namespace bunkoOCR
 
         public void OnStdOut(object sender, DataReceivedEventArgs e)
         {
+            Debug.WriteLine(e.Data);
             if (string.IsNullOrEmpty(e.Data) || string.IsNullOrEmpty(e.Data.Trim()))
             {
                 return;
@@ -251,44 +248,75 @@ namespace bunkoOCR
             {
                 textBox1.Text = e.Data;
             }
+            if (listBox1.Items.Count == 0)
+            {
+                if(button_config.InvokeRequired)
+                {
+                    button_config.Invoke((MethodInvoker)(() =>
+                    {
+                        button_config.Enabled = true;
+                    }));
+                }
+                else
+                {
+                    button_config.Enabled = true;
+                }
+            }
         }
 
         private void postprocess(string filename)
         {
-            if(!txtoutput && !aozoraoutput && !htmloutput)
+            var dict = ConfigReader.LoadRubyTreat();
+
+            var raw_output = dict["raw_output"] == "1";
+            var output_text = dict["output_text"] == "1";
+            var output_ruby = dict["output_ruby"] == "1";
+            var before_ruby = dict["before_ruby"];
+            var separator_ruby = dict["separator_ruby"];
+            var after_ruby = dict["after_ruby"];
+
+            string process_string(string target)
             {
-                return;
+                if(output_ruby)
+                {
+                    return Regex.Replace(target, "\uFFF9(.*?)\uFFFA(.*?)\uFFFB", before_ruby + "$1" + separator_ruby + "$2" + after_ruby);
+                }
+                else
+                {
+                    return Regex.Replace(target, "\uFFF9(.*?)\uFFFA(.*?)\uFFFB", before_ruby + "$1" + after_ruby);
+                }
             }
+
             string jsonfile = filename + ".json";
             if (File.Exists(jsonfile))
             {
                 var jsonString = File.ReadAllText(jsonfile);
                 var result = JsonSerializer.Deserialize<OCRresult>(jsonString);
-                var str = result.text;
 
-                if(txtoutput)
+                if(!raw_output)
                 {
-                    var txtstr = Regex.Replace(str, "\uFFF9(.*?)\uFFFA(.*?)\uFFFB", "$1");
-                    var txtfilename = filename + ".noruby.txt";
-                    File.WriteAllText(txtfilename, txtstr);
+                    result.text = process_string(result.text);
+                    result.block = result.block.Select(item => {
+                        item.text = process_string(item.text);
+                        return item;
+                    }).ToList();
+                    result.line = result.line.Select(item => {
+                        item.text = process_string(item.text);
+                        return item;
+                    }).ToList();
                 }
-                if (aozoraoutput)
+
+                var options = new JsonSerializerOptions {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    WriteIndented = true
+                };
+                var jsonUtf8Bytes = JsonSerializer.SerializeToUtf8Bytes(result, options);
+                File.WriteAllBytes(jsonfile, jsonUtf8Bytes);
+
+                if(output_text)
                 {
-                    var txtstr = Regex.Replace(str, "\uFFF9(.*?)\uFFFA(.*?)\uFFFB", "｜$1《$2》");
-                    var txtfilename = filename + ".aozora.txt";
-                    File.WriteAllText(txtfilename, txtstr);
-                }
-                if (htmloutput)
-                {
-                    var htmlstr = str;
-                    htmlstr = htmlstr.Replace("&", "&amp;");
-                    htmlstr = htmlstr.Replace("<", "&lt;");
-                    htmlstr = htmlstr.Replace(">", "&gt;");
-                    htmlstr = htmlstr.Replace("\n", "<br>\r\n");
-                    htmlstr = Regex.Replace(htmlstr, "\uFFF9(.*?)\uFFFA(.*?)\uFFFB", "<ruby>$1<rt>$2</rt></ruby>");
-                    htmlstr = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta charset=\"utf-8\">\r\n</head>\r\n<body>\r\n" + htmlstr + "</body>\r\n</html>";
-                    var htmlfilename = filename + ".html";
-                    File.WriteAllText(htmlfilename, htmlstr);
+                    var txtfilename = filename + ".txt";
+                    File.WriteAllText(txtfilename, result.text);
                 }
             }
         }
@@ -315,7 +343,7 @@ namespace bunkoOCR
                 string jsonfile = donefile + ".json";
                 if (File.Exists(jsonfile))
                 {
-                    var jsonString = File.ReadAllText(jsonfile);
+                    var jsonString = File.ReadAllText(jsonfile, Encoding.UTF8);
                     var result = JsonSerializer.Deserialize<OCRresult>(jsonString);
                     var htmlstr = result.text;
                     htmlstr = htmlstr.Replace("&", "&amp;");
@@ -355,80 +383,123 @@ namespace bunkoOCR
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            using (StreamWriter writer = new StreamWriter("param.config"))
-            {
-                foreach (string key in _dictionary.Keys)
-                {
-                    var value = _dictionary[key];
-                    writer.WriteLine(key + ":" + value);
-                }
-            }
-
             if (_process != null)
             {
                 _process.Kill();
             }
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            textBox2.Text = _dictionary[(string)comboBox1.SelectedItem].ToString();
-        }
+        //private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        //{
+        //    textBox2.Text = _dictionary[(string)comboBox1.SelectedItem].ToString();
+        //}
 
-        private void button3_Click(object sender, EventArgs e)
+        //private void button3_Click(object sender, EventArgs e)
+        //{
+        //    var param = (string)comboBox1.SelectedItem;
+        //    if (string.IsNullOrEmpty(param)) { return; }
+        //    try
+        //    {
+        //        var value = double.Parse(textBox2.Text);
+
+        //        var str = param+":"+value.ToString();
+        //        _dictionary[param] = value;
+        //        var b = Encoding.UTF8.GetBytes(str + "\r\n");
+        //        _queue.Enqueue(b);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return;
+        //    }
+        //}
+
+        //private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        //{
+        //    txtoutput = checkBox1.Checked;
+        //}
+
+        //private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        //{
+        //    aozoraoutput = checkBox2.Checked;
+        //}
+
+        //private void checkBox3_CheckedChanged(object sender, EventArgs e)
+        //{
+        //    htmloutput = checkBox3.Checked;
+        //}
+
+        private void ReloadEngine()
         {
-            var param = (string)comboBox1.SelectedItem;
-            if (string.IsNullOrEmpty(param)) { return; }
-            try
+            listBox1.Items.Clear();
+            if (_process != null)
             {
-                var value = double.Parse(textBox2.Text);
-
-                var str = param+":"+value.ToString();
-                _dictionary[param] = value;
-                var b = Encoding.UTF8.GetBytes(str + "\r\n");
-                _queue.Enqueue(b);
+                restart = true;
+                _process.Kill();
             }
-            catch (Exception)
+            else
             {
-                return;
+                InitializeProcess();
             }
         }
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        private void button_config_Click(object sender, EventArgs e)
         {
-            txtoutput = checkBox1.Checked;
+            var form3 = new Form3();
+            if(form3.ShowDialog() == DialogResult.OK)
+            {
+                ReloadEngine();
+            }
         }
 
-        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        private void button_kill_Click(object sender, EventArgs e)
         {
-            aozoraoutput = checkBox2.Checked;
-        }
-
-        private void checkBox3_CheckedChanged(object sender, EventArgs e)
-        {
-            htmloutput = checkBox3.Checked;
+            ReloadEngine();
         }
     }
 
-    public class Boxes
+    public class Block
     {
-        public int block { get; set; }
-        public int line { get; set; }
-        public int index { get; set; }
-        public int direction { get; set; }
+        public int blockidx { get; set; }
+        public string text { get; set; }
+        public int vertical { get; set; }
+        public float x1 { get; set; }
+        public float x2 { get; set; }
+        public float y1 { get; set; }
+        public float y2 { get; set; }
+    }
+
+    public class Box
+    {
+        public int blockidx { get; set; }
+        public int lineidx { get; set; }
+        public int subidx { get; set; }
+        public int vertical { get; set; }
         public int ruby { get; set; }
         public int rubybase { get; set; }
-        public int space { get; set; }
+        public int emphasis { get; set; }
         public float cx { get; set; }
         public float cy { get; set; }
         public float w { get; set; }
         public float h { get; set; }
-        public string character { get; set; }
+        public string text { get; set; }
+    }
+    public class Line
+    {
+        public int blockidx { get; set; }
+        public int lineidx { get; set; }
+        public int vertical { get; set; }
+        public float x1 { get; set; }
+        public float x2 { get; set; }
+        public float y1 { get; set; }
+        public float y2 { get; set; }
+        public string text { get; set; }
     }
 
     public class OCRresult
     {
-        public IList<Boxes> boxes { get; set; }
+        public List<Block> block { get; set; }
+        public List<Box> box { get; set; }
+        public List<Line> line { get; set; }
         public string text { get; set; }
     }
 }

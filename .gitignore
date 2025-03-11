@@ -363,3 +363,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/openvino_genai_windows_2025.0.0.0_x86_64

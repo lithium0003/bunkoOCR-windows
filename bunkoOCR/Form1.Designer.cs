@@ -35,12 +35,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.button2 = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.button3 = new System.Windows.Forms.Button();
-            this.textBox2 = new System.Windows.Forms.TextBox();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.checkBox3 = new System.Windows.Forms.CheckBox();
-            this.checkBox2 = new System.Windows.Forms.CheckBox();
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.button_kill = new System.Windows.Forms.Button();
+            this.button_config = new System.Windows.Forms.Button();
             this.splitter2 = new System.Windows.Forms.Splitter();
             this.panel1 = new System.Windows.Forms.Panel();
             this.listBox2 = new System.Windows.Forms.ListBox();
@@ -108,12 +104,8 @@
             // 
             // panel2
             // 
-            this.panel2.Controls.Add(this.button3);
-            this.panel2.Controls.Add(this.textBox2);
-            this.panel2.Controls.Add(this.comboBox1);
-            this.panel2.Controls.Add(this.checkBox3);
-            this.panel2.Controls.Add(this.checkBox2);
-            this.panel2.Controls.Add(this.checkBox1);
+            this.panel2.Controls.Add(this.button_kill);
+            this.panel2.Controls.Add(this.button_config);
             this.panel2.Controls.Add(this.button1);
             this.panel2.Controls.Add(this.label1);
             this.panel2.Controls.Add(this.label2);
@@ -124,82 +116,26 @@
             this.panel2.Size = new System.Drawing.Size(1290, 87);
             this.panel2.TabIndex = 8;
             // 
-            // button3
+            // button_kill
             // 
-            this.button3.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.button3.Location = new System.Drawing.Point(609, 42);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(87, 37);
-            this.button3.TabIndex = 12;
-            this.button3.Text = "Set";
-            this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
+            this.button_kill.Location = new System.Drawing.Point(287, 3);
+            this.button_kill.Name = "button_kill";
+            this.button_kill.Size = new System.Drawing.Size(75, 57);
+            this.button_kill.TabIndex = 8;
+            this.button_kill.Text = "kill";
+            this.button_kill.UseVisualStyleBackColor = true;
+            this.button_kill.Click += new System.EventHandler(this.button_kill_Click);
             // 
-            // textBox2
+            // button_config
             // 
-            this.textBox2.Location = new System.Drawing.Point(503, 48);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(100, 25);
-            this.textBox2.TabIndex = 11;
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
-            "blank_cutoff",
-            "ruby_cutoff",
-            "rubybase_cutoff",
-            "space_cutoff",
-            "line_valueth",
-            "detect_cut_off",
-            "resize",
-            "sleep_wait",
-            "sep_valueth",
-            "sep_valueth2"});
-            this.comboBox1.Location = new System.Drawing.Point(500, 12);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(175, 26);
-            this.comboBox1.TabIndex = 10;
-            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
-            // 
-            // checkBox3
-            // 
-            this.checkBox3.AutoSize = true;
-            this.checkBox3.Checked = true;
-            this.checkBox3.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox3.Location = new System.Drawing.Point(182, 59);
-            this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(130, 22);
-            this.checkBox3.TabIndex = 9;
-            this.checkBox3.Text = "HTMLを出力";
-            this.checkBox3.UseVisualStyleBackColor = true;
-            this.checkBox3.CheckedChanged += new System.EventHandler(this.checkBox3_CheckedChanged);
-            // 
-            // checkBox2
-            // 
-            this.checkBox2.AutoSize = true;
-            this.checkBox2.Checked = true;
-            this.checkBox2.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox2.Location = new System.Drawing.Point(182, 35);
-            this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(247, 22);
-            this.checkBox2.TabIndex = 8;
-            this.checkBox2.Text = "青空形式のテキストtxtを出力";
-            this.checkBox2.UseVisualStyleBackColor = true;
-            this.checkBox2.CheckedChanged += new System.EventHandler(this.checkBox2_CheckedChanged);
-            // 
-            // checkBox1
-            // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Checked = true;
-            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(182, 12);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(262, 22);
-            this.checkBox1.TabIndex = 7;
-            this.checkBox1.Text = "ふりがな無しのテキストtxtを出力";
-            this.checkBox1.UseVisualStyleBackColor = true;
-            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            this.button_config.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.button_config.Location = new System.Drawing.Point(508, 3);
+            this.button_config.Name = "button_config";
+            this.button_config.Size = new System.Drawing.Size(163, 57);
+            this.button_config.TabIndex = 7;
+            this.button_config.Text = "Config";
+            this.button_config.UseVisualStyleBackColor = true;
+            this.button_config.Click += new System.EventHandler(this.button_config_Click);
             // 
             // splitter2
             // 
@@ -281,17 +217,13 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Panel panel2;
-        private System.Windows.Forms.CheckBox checkBox3;
-        private System.Windows.Forms.CheckBox checkBox2;
-        private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.Splitter splitter2;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.ListBox listBox2;
         private System.Windows.Forms.Splitter splitter1;
         private System.Windows.Forms.ListBox listBox1;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.Button button_config;
+        private System.Windows.Forms.Button button_kill;
     }
 }
 

@@ -10,13 +10,13 @@
 #include <iterator>
 
 class CodeDecoder {
-    const std::array<int64_t, 2> inputShape = { 1, 64 };
+    const std::array<int64_t, 2> inputShape = { 1, 100 };
     const std::array<int64_t, 2> mod1091outputShape = { 1, 1091 };
     const std::array<int64_t, 2> mod1093outputShape = { 1, 1093 };
     const std::array<int64_t, 2> mod1097outputShape = { 1, 1097 };
 
     const std::array<const char*, 1> inputNames = { "feature_input" };
-    const std::array<const char*, 3> outputNames = { "mod_1091", "mod_1093", "mod_1097" };
+    const std::array<const char*, 3> outputNames = { "modulo_1091", "modulo_1093", "modulo_1097" };
 
     Ort::Env env;
     Ort::SessionOptions sessionOptions;
@@ -25,7 +25,7 @@ class CodeDecoder {
     Ort::Value inputTensor;
     std::vector<Ort::Value> outputTensors;
 
-    std::array<float, 64> input;
+    std::array<float, 100> input;
     std::vector<float> mod1091;
     std::vector<float> mod1093;
     std::vector<float> mod1097;

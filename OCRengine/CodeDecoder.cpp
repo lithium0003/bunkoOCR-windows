@@ -3,8 +3,11 @@
 
 #include "util_func.h"
 
+extern bool useCUDA;
+extern bool useTensorRT;
 extern bool useDirectML;
 extern int useDirectML_idx;
+extern bool useOpenVINO;
 
 CodeDecoder::CodeDecoder():
     env(ORT_LOGGING_LEVEL_FATAL),
@@ -13,7 +16,7 @@ CodeDecoder::CodeDecoder():
     mod1091(1091), mod1093(1093), mod1097(1097)
 {
     bool success = false;
-    if (!success) {
+    if (!success && useTensorRT) {
         success = true;
         try {
             auto api = Ort::GetApi();
@@ -22,13 +25,28 @@ CodeDecoder::CodeDecoder():
             std::vector<const char*> keys{ "trt_max_workspace_size", "trt_fp16_enable", "trt_engine_cache_enable", "trt_engine_cache_path" };
             std::vector<const char*> values{ "4294967296", "1", "1", "cache" };
             Ort::ThrowOnError(api.UpdateTensorRTProviderOptions(tensorrt_options, keys.data(), values.data(), 4));
+            sessionOptions = Ort::SessionOptions();
+            sessionOptions.AppendExecutionProvider_TensorRT_V2(*tensorrt_options);
+            session = Ort::Session(env, L"CodeDecoder.onnx", sessionOptions);
+            std::cout << "tensorRT" << std::endl;
+            api.ReleaseTensorRTProviderOptions(tensorrt_options);
+        }
+        catch (...) {
+            success = false;
+        }
+    }
+
+    if (!success && useCUDA) {
+        success = true;
+        try {
+            auto api = Ort::GetApi();
             OrtCUDAProviderOptionsV2* cuda_options = nullptr;
             Ort::ThrowOnError(api.CreateCUDAProviderOptions(&cuda_options));
             sessionOptions = Ort::SessionOptions();
-            sessionOptions.AppendExecutionProvider_TensorRT_V2(*tensorrt_options);
             sessionOptions.AppendExecutionProvider_CUDA_V2(*cuda_options);
             session = Ort::Session(env, L"CodeDecoder.onnx", sessionOptions);
-            std::cout << "tensorRT" << std::endl;
+            std::cout << "CUDA" << std::endl;
+            api.ReleaseCUDAProviderOptions(cuda_options);
         }
         catch (...) {
             success = false;
@@ -51,15 +69,15 @@ CodeDecoder::CodeDecoder():
         }
     }
 
-    if (!success) {
+    if (!success && useOpenVINO) {
         success = true;
         try {
-            OrtOpenVINOProviderOptions options;
-            options.device_type = "CPU_FP32";
-            options.cache_dir = "cache";
+            std::unordered_map<std::string, std::string> options;
+            options["device_type"] = "CPU";
+            options["precision"] = "FP32";
+            options["cache_dir"] = "cache";
             sessionOptions = Ort::SessionOptions();
-            sessionOptions.AppendExecutionProvider_OpenVINO(options);
-            sessionOptions.SetGraphOptimizationLevel(ORT_DISABLE_ALL);
+            sessionOptions.AppendExecutionProvider("OpenVINO", options);
             session = Ort::Session(env, L"CodeDecoder.onnx", sessionOptions);
             std::cout << "OpenVINO" << std::endl;
         }
@@ -87,9 +105,9 @@ int CodeDecoder::run()
 
 int CodeDecoder::run_model(std::vector<unsigned int>& code, const std::vector<float>& features)
 {
-    int count = features.size() / 64;
+    int count = features.size() / 100;
     for (int i = 0; i < count; i++) {
-        std::copy(features.begin() + (i * 64), features.begin() + ((i + 1) * 64), input.begin());
+        std::copy(features.begin() + (i * 100), features.begin() + ((i + 1) * 100), input.begin());
 
         if (run() != 0) {
             return 1;
@@ -100,7 +118,7 @@ int CodeDecoder::run_model(std::vector<unsigned int>& code, const std::vector<fl
         int id1097 = argmax(mod1097);
 
         auto pred_id = decode_id({ id1091, id1093, id1097 });
-        std::cerr << pred_id << std::endl;
+        //std::cerr << pred_id << std::endl;
 
         code.push_back(pred_id);
     }

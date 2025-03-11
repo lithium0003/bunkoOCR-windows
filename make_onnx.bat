@@ -1,5 +1,6 @@
 cd onnxruntime
-call "C:\Program Files (x86)\Intel\openvino_2023\setupvars.bat"
-set TensorRT_PATH=C:\TensorRT-8.6.1.6
-call build.bat --config  RelWithDebInfo --build_shared_lib --use_openvino CPU_FP32 --use_dml --use_cuda --cudnn_home "%CUDA_PATH_V11_8%" --cuda_home "%CUDA_PATH_V11_8%" --use_tensorrt --tensorrt_home "%TensorRT_PATH%" --parallel --skip_test --cmake_generator "Visual Studio 17 2022"
+call "..\openvino_genai_windows_2025.0.0.0_x86_64\setupvars.bat"
+set TensorRT_PATH=C:\TensorRT-10.9.0.34
+
+call build.bat --config Release --build_shared_lib --parallel --compile_no_warning_as_error --skip_submodule_sync --skip_tests --use_openvino CPU --use_dml --use_cuda --cudnn_home "%CUDA_PATH_V12_8%" --cuda_home "%CUDA_PATH_V12_8%" --use_tensorrt --tensorrt_home "%TensorRT_PATH%"
 

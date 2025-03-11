@@ -16,12 +16,12 @@
 #include <iterator>
 
 class TextDetector {
-    const std::array<int64_t, 4> inputShape = { 1, 512, 512, 3 };
-    const std::array<int64_t, 4> mapsOutputShape = { 1, 256, 256, 11 };
-    const std::array<int64_t, 4> featureOutputShape = { 1, 256, 256, 64 };
+    const std::array<int64_t, 4> inputShape = { 1, 3, 768, 768 };
+    const std::array<int64_t, 4> mapsOutputShape = { 1, 10, 192, 192 };
+    const std::array<int64_t, 4> featureOutputShape = { 1, 100, 192, 192 };
 
-    const std::array<const char*, 1> inputNames = { "image_input" };
-    const std::array<const char*, 2> outputNames = { "maps", "feature" };
+    const std::array<const char*, 1> inputNames = { "image" };
+    const std::array<const char*, 2> outputNames = { "heatmap", "feature" };
 
     Ort::Env env;
     Ort::SessionOptions sessionOptions;
@@ -30,9 +30,9 @@ class TextDetector {
     Ort::Value inputTensor;
     std::vector<Ort::Value> outputTensors;
 
-    std::array<float, 512 * 512 * 3> input;
-    std::array<float, 256 * 256 * 11> maps;
-    std::array<float, 256 * 256 * 64> feature;
+    std::array<float, 3 * 768 * 768> input;
+    std::array<float, 10 * 192 * 192> maps;
+    std::array<float, 100 * 192 * 192> feature;
 
     std::vector<float> locations;
     std::vector<float> glyphfeatures;
@@ -47,7 +47,9 @@ public:
     std::vector<float> lineimage;
     std::vector<float> sepimage;
     int im_width = 0;
-    int im_heiht = 0;
+    int im_height = 0;
+    float step_ratio = 0.66;
+    int step = 0;
 
     TextDetector();
     int run_model(std::vector<float>& loc, std::vector<float>& features, int width, int height, const Gdiplus::BitmapData &data);

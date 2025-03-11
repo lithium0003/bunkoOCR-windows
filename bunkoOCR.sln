@@ -4,12 +4,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OCRengine", "OCRengine\OCRengine.vcxproj", "{64569EE0-D1D2-46A1-AA57-DEB16065A40E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F} = {54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bunkoOCR", "bunkoOCR\bunkoOCR.csproj", "{003728C3-7025-4D36-8174-261BB49E0A2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jsonToText", "jsonToText\jsonToText.csproj", "{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "detectGPU", "detectGPU\detectGPU.vcxproj", "{202A6002-8F9E-498D-A99E-A43468399FD6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "textline_detect", "textline_detect\textline_detect.vcxproj", "{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,18 +48,6 @@ Global
 		{003728C3-7025-4D36-8174-261BB49E0A2B}.Release|x64.Build.0 = Release|Any CPU
 		{003728C3-7025-4D36-8174-261BB49E0A2B}.Release|x86.ActiveCfg = Release|Any CPU
 		{003728C3-7025-4D36-8174-261BB49E0A2B}.Release|x86.Build.0 = Release|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Debug|x64.Build.0 = Debug|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Debug|x86.Build.0 = Debug|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Release|x64.ActiveCfg = Release|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Release|x64.Build.0 = Release|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Release|x86.ActiveCfg = Release|Any CPU
-		{2C6F517C-2F9E-4BB8-93B9-5368F3A04DCC}.Release|x86.Build.0 = Release|Any CPU
 		{202A6002-8F9E-498D-A99E-A43468399FD6}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{202A6002-8F9E-498D-A99E-A43468399FD6}.Debug|Any CPU.Build.0 = Debug|x64
 		{202A6002-8F9E-498D-A99E-A43468399FD6}.Debug|x64.ActiveCfg = Debug|x64
@@ -69,6 +60,18 @@ Global
 		{202A6002-8F9E-498D-A99E-A43468399FD6}.Release|x64.Build.0 = Release|x64
 		{202A6002-8F9E-498D-A99E-A43468399FD6}.Release|x86.ActiveCfg = Release|Win32
 		{202A6002-8F9E-498D-A99E-A43468399FD6}.Release|x86.Build.0 = Release|Win32
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Debug|Any CPU.Build.0 = Debug|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Debug|x64.ActiveCfg = Debug|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Debug|x64.Build.0 = Debug|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Debug|x86.ActiveCfg = Debug|Win32
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Debug|x86.Build.0 = Debug|Win32
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Release|Any CPU.ActiveCfg = Release|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Release|Any CPU.Build.0 = Release|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Release|x64.ActiveCfg = Release|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Release|x64.Build.0 = Release|x64
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Release|x86.ActiveCfg = Release|Win32
+		{54F4FD31-D5C3-4233-A6E4-6C745A1DFB6F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

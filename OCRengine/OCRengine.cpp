@@ -15,33 +15,38 @@
 #include "CodeDecoder.h"
 #include "line_detect.h"
 #include "Transformer.h"
+#include "util_func.h"
 
 #pragma	comment(lib,"onnxruntime.lib")
 #pragma	comment(lib,"onnxruntime_providers_dml.lib")
 
 extern double blank_cutoff;
+extern float detect_cut_off;
+
 extern double ruby_cutoff;
 extern double rubybase_cutoff;
 extern double space_cutoff;
+extern double emphasis_cutoff;
 extern float line_valueth;
-extern float detect_cut_off;
 extern float sep_valueth;
 extern float sep_valueth2;
+extern double allowwidth_next;
 double resize = 1.0;
 int sleep_wait = 0;
 
-std::vector<float> make_feature_input(const std::vector<int>& boxes, std::vector<float>& glyphfeatures)
+void make_feature_input(const std::vector<int32_t>& boxes, const std::vector<float>& glyphfeatures, std::vector<float>& features, std::vector<feature_idxinfo>& feature_idx)
 {
-    int count = glyphfeatures.size() / 64;
+    int count = glyphfeatures.size() / 100;
     int box_count = boxes.size() / 5;
 
     std::cerr << box_count << " boxes" << std::endl;
 
-    std::vector<float> features;
+    features.clear();
+    feature_idx.clear();
+
     int prev_block = 0;
     int prev_idx = 0;
-    std::vector<float> cr(64 + 4);
-    cr[64 + 3] = 1;
+    int vertical = 0;
     for (int i = 0; i < box_count; i++) {
         int id = boxes[i * 5 + 0];
         int block = boxes[i * 5 + 1];
@@ -51,205 +56,28 @@ std::vector<float> make_feature_input(const std::vector<int>& boxes, std::vector
 
         if (id < 0 || id >= count) continue;
 
-        float ruby = 0;
-        float rubybase = 0;
-        float space = 0;
-
-        if (prev_block != block) {
-            prev_block = block;
-            std::copy(cr.begin(), cr.end(), std::back_inserter(features));
-            std::copy(cr.begin(), cr.end(), std::back_inserter(features));
-        }
-        if (prev_idx != idx) {
-            prev_idx = idx;
-            std::copy(cr.begin(), cr.end(), std::back_inserter(features));
-        }
-
-        if ((subtype & (2 + 4)) == 2 + 4) {
-            ruby = 1;
-        }
-        else if ((subtype & (2 + 4)) == 2) {
-            rubybase = 1;
-        }
-
-        if ((subtype & 8) == 8) {
-            space = 1;
-        }
-
-        std::copy(glyphfeatures.begin() + id * 64, glyphfeatures.begin() + (id + 1) * 64, std::back_inserter(features));
-        features.push_back(space);
-        features.push_back(ruby);
-        features.push_back(rubybase);
-        features.push_back(0);
-    }
-    std::copy(cr.begin(), cr.end(), std::back_inserter(features));
-
-    return features;
-}
-
-std::string UTF32toUTF8(unsigned int code)
-{
-    if (code < 0) {
-        return "";
-    }
-    std::stringstream ss;
-    if (code <= 0x7F) {
-        ss << unsigned char(code);
-        return ss.str();
-    }
-    if (code <= 0x07FF) {
-        //                    110x xxxx
-        unsigned char byte1 = 0xC0 | ((code & 0x07C0) >> 6);
-        //                    10xx xxxx
-        unsigned char byte2 = 0x80 | (code & 0x003F);
-        ss << byte1 << byte2;
-        return ss.str();
-    }
-    if (code <= 0xFFFF) {
-        //                    1110 xxxx
-        unsigned char byte1 = 0xE0 | ((code & 0xf000) >> 12);
-        //                    10xx xxxx
-        unsigned char byte2 = 0x80 | ((code & 0x0FC0) >> 6);
-        //                    10xx xxxx
-        unsigned char byte3 = 0x80 | (code & 0x003F);
-        ss << byte1 << byte2 << byte3;
-        return ss.str();
-    }
-    if (code <= 0x10FFFF) {
-        //                    1111 0xxx
-        unsigned char byte1 = 0xF0 | ((code & 0x1C0000) >> 18);
-        //                    10xx xxxx
-        unsigned char byte2 = 0x80 | ((code & 0x3F000) >> 12);
-        //                    10xx xxxx
-        unsigned char byte3 = 0x80 | ((code & 0x0FC0) >> 6);
-        //                    10xx xxxx
-        unsigned char byte4 = 0x80 | (code & 0x003F);
-        ss << byte1 << byte2 << byte3 << byte4;
-        return ss.str();
-    }
-    return "";
-}
-
-std::string escape_char(unsigned int c)
-{
-    if (c >= 0x20 && c <= 0x21) {
-        return UTF32toUTF8(c);
-    }
-    if (c >= 0x23 && c <= 0x5B) {
-        return UTF32toUTF8(c);
-    }
-    if (c >= 0x5D && c <= 0x10FFFF) {
-        return UTF32toUTF8(c);
-    }
-    switch (c) {
-    case 0x22:
-        return "\\\"";
-    case 0x5C:
-        return "\\\\";
-    case 0x2F:
-        return "\\/";
-    case 0x08:
-        return "\\b";
-    case 0x0C:
-        return "\\f";
-    case 0x0A:
-        return "\\n";
-    case 0x0D:
-        return "\\r";
-    case 0x09:
-        return "\\t";
-    }
-    const char* table = "0123456789ABCDEF";
-    std::string s = "\\u";
-    s += table[(c & 0xF000) >> 12];
-    s += table[(c & 0x0F00) >> 8];
-    s += table[(c & 0x00F0) >> 4];
-    s += table[c & 0x000F];
-    return s;
-}
-
-std::string escape_char(std::string str)
-{
-    std::string result = "";
-    for (unsigned char *p = (unsigned char*)str.data(); *p != 0; p++) {
-        unsigned int c = *p;
-        if (c >= 0x20 && c <= 0x21) {
-            result += *p;
-            continue;
-        }
-        else if (c >= 0x23 && c <= 0x5B) {
-            result += *p;
-            continue;
-        }
-        else if (c >= 0x5D && c <= 0x10FFFF) {
-            result += *p;
-            continue;
-        }
-        switch (c) {
-        case 0x22:
-            result += "\\\"";
-            continue;
-        case 0x5C:
-            result += "\\\\";
-            continue;
-        case 0x2F:
-            result += "\\/";
-            continue;
-        case 0x08:
-            result += "\\b";
-            continue;
-        case 0x0C:
-            result += "\\f";
-            continue;
-        case 0x0A:
-            result += "\\n";
-            continue;
-        case 0x0D:
-            result += "\\r";
-            continue;
-        case 0x09:
-            result += "\\t";
-            continue;
-        }
-        const char* table = "0123456789ABCDEF";
-        std::string s = "\\u";
-        s += table[(c & 0xF000) >> 12];
-        s += table[(c & 0x0F00) >> 8];
-        s += table[(c & 0x00F0) >> 4];
-        s += table[c & 0x000F];
-        result += s;
-    }
-    return result;
-}
-
-void WriteJson(std::ostream& stream, const std::vector<int>& boxes, const std::vector<float>& locations, const std::vector<unsigned int>& codes, const std::string& txt)
-{
-    int box_count = boxes.size() / 5;
-    int count = std::min(codes.size(), locations.size() / 9);
-
-    stream << "{" << std::endl;
-
-    stream << " \"boxes\": [" << std::endl;
-    for (int i = 0; i < box_count; i++) {
-        int id = boxes[i * 5 + 0];
-        int block = boxes[i * 5 + 1];
-        int idx = boxes[i * 5 + 2];
-        int subidx = boxes[i * 5 + 3];
-        int subtype = boxes[i * 5 + 4];
-
-        if (id < 0 || id >= count) continue;
-
-        auto c = codes[id];
-        if (c > 0x10FFFF) c = 0xFFFD;
-        auto s = escape_char(c);
-
-        int direction = 0;
         int ruby = 0;
         int rubybase = 0;
         int space = 0;
+        int emphasis = 0;
 
-        if ((subtype & (1)) == 1) {
-            direction = 1;
+
+        if (prev_block != block) {
+            prev_block = block;
+            std::vector<float> g(100 + 6);
+            g[100 + 0] = 5 * vertical;
+            g[100 + 5] = 5;
+            std::copy(g.begin(), g.end(), std::back_inserter(features));
+            feature_idx.emplace_back(-1, -1, -1, -1, -1);
+            prev_idx = -1;
+        }
+        if (prev_idx != idx) {
+            prev_idx = idx;
+            std::vector<float> g(100 + 6);
+            g[100 + 0] = 5 * vertical;
+            g[100 + 5] = 5;
+            std::copy(g.begin(), g.end(), std::back_inserter(features));
+            feature_idx.emplace_back(-1, -1, -1, -1, -1);
         }
 
         if ((subtype & (2 + 4)) == 2 + 4) {
@@ -263,50 +91,30 @@ void WriteJson(std::ostream& stream, const std::vector<int>& boxes, const std::v
             space = 1;
         }
 
-        float cx = locations[id * 9 + 1] / resize;
-        float cy = locations[id * 9 + 2] / resize;
-        float w = locations[id * 9 + 3] / resize;
-        float h = locations[id * 9 + 4] / resize;
+        if ((subtype & 16) == 16) {
+            emphasis = 1;
+        }
 
-        stream << "  {" << std::endl;
-
-        stream << "   \"block\": " << block << "," << std::endl;
-        stream << "   \"line\": " << idx << "," << std::endl;
-        stream << "   \"index\": " << subidx << "," << std::endl;
-        stream << "   \"direction\": " << direction << "," << std::endl;
-        stream << "   \"ruby\": " << ruby << "," << std::endl;
-        stream << "   \"rubybase\": " << rubybase << "," << std::endl;
-        stream << "   \"space\": " << space << "," << std::endl;
-        stream << "   \"cx\": " << cx << "," << std::endl;
-        stream << "   \"cy\": " << cy << "," << std::endl;
-        stream << "   \"w\": " << w << "," << std::endl;
-        stream << "   \"h\": " << h << "," << std::endl;
-        stream << "   \"character\": \"" << s << "\"" << std::endl;
-
-        if (i < box_count - 1) {
-            stream << "  }," << std::endl;
+        if ((subtype & 1) == 0) {
+            vertical = 0;
         }
         else {
-            stream << "  }" << std::endl;
+            vertical = 1;
         }
+
+        for (int j = 0; j < 100; j++) {
+            features.push_back(float(glyphfeatures[id * 100 + j]));
+        }
+        features.push_back(vertical * 5);
+        features.push_back(rubybase * 5);
+        features.push_back(ruby * 5);
+        features.push_back(space * 5);
+        features.push_back(emphasis * 5);
+        features.push_back(0);
+        feature_idx.emplace_back(id, block, idx, subidx, subtype);
     }
-    stream << " ]," << std::endl;
-
-    stream << " \"text\": \"" << escape_char(txt) << "\"" << std::endl;
-
-    stream << "}" << std::endl;
 }
 
-std::wstring ToUnicodeStr(const std::string &utf8str)
-{
-    int needLength = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, nullptr, 0);
-    std::wstring result;
-    if (needLength > 0) {
-        result.resize(needLength - 1);
-        MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), -1, &result[0], result.size());
-    }
-    return result;
-}
 
 int process(std::string input_filename, TextDetector& model1, CodeDecoder& model2, Transformer& model3)
 {
@@ -320,7 +128,7 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
     }
     if (bitmap->GetLastStatus() != Gdiplus::Ok) {
         delete bitmap;
-        std::cerr << "faild to load image status" << input_filename << std::endl;
+        std::cerr << "faild to load image status " << input_filename << std::endl;
         return 1;
     }
     auto rotation = Gdiplus::RotateFlipType::RotateNoneFlipNone;
@@ -409,22 +217,37 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
     if (ret != 0) return ret;
 
     std::cout << "linedetect" << std::endl;
-    auto boxes = line_detect(model1.im_width, model1.im_heiht, locations, model1.lineimage, model1.sepimage);
+    auto boxes = line_detect(model1.im_width, model1.im_height, locations, model1.lineimage, model1.sepimage);
 
-    auto feature = make_feature_input(boxes, glyphfeatures);
-
-    std::vector<unsigned int> code;
-    ret = model3.run_model(code, feature);
+    std::vector<float> features;
+    std::vector<feature_idxinfo> feature_idx;
+    make_feature_input(boxes, glyphfeatures, features, feature_idx);
+    
+    OCR_info info;
+    ret = model3.run_model(info, features, locations, feature_idx);
     if (ret != 0) return ret;
 
-    std::string txt;
-    for (auto i : code) {
-        if (i > 0x10FFFF) i = 0xFFFD;
-        txt += UTF32toUTF8(i);
+    for (auto& block : info.block) {
+        block.x1 /= resize;
+        block.x2 /= resize;
+        block.y1 /= resize;
+        block.y2 /= resize;
+    }
+    for (auto& line : info.line) {
+        line.x1 /= resize;
+        line.x2 /= resize;
+        line.y1 /= resize;
+        line.y2 /= resize;
+    }
+    for (auto& box : info.box) {
+        box.cx /= resize;
+        box.cy /= resize;
+        box.w /= resize;
+        box.h /= resize;
     }
 
     std::ofstream ofs(wfilename + TEXT(".json"));
-    WriteJson(ofs, boxes, locations, codes, txt);
+    WriteJson(ofs, info);
 
     std::cout << "done: " << input_filename << std::endl;
 
@@ -434,8 +257,11 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
 Gdiplus::GdiplusStartupInput gdiSI;
 ULONG_PTR gdiToken;
 
+bool useCUDA = false;
+bool useTensorRT = false;
 bool useDirectML = false;
 int useDirectML_idx = 0;
+bool useOpenVINO = false;
 
 int main(int argc, char **argv)
 {
@@ -450,12 +276,30 @@ int main(int argc, char **argv)
     }
 
     if (argc > 1) {
-        std::stringstream(argv[1]) >> useDirectML_idx;
-        if (useDirectML_idx < 0 || useDirectML_idx == 255) {
-            useDirectML = false;
-        }
-        else {
-            useDirectML = true;
+        useCUDA = false;
+        useTensorRT = false;
+
+        for (int i = 1; i < argc; i++) {
+            std::string argstr(argv[i]);
+
+            if (argstr == "CUDA") {
+                useCUDA = true;
+            }
+            else if (argstr == "TensorRT") {
+                useTensorRT = true;
+            }
+            else if (argstr == "OpenVINO") {
+                useOpenVINO = true;
+            }
+            else {
+                std::stringstream(argv[1]) >> useDirectML_idx;
+                if (useDirectML_idx < 0 || useDirectML_idx == 255) {
+                    useDirectML = false;
+                }
+                else {
+                    useDirectML = true;
+                }
+            }
         }
     }
     std::cout << "process start" << std::endl;
@@ -471,13 +315,14 @@ int main(int argc, char **argv)
         "ruby_cutoff:",
         "rubybase_cutoff:",
         "space_cutoff:",
+        "emphasis_cutoff:",
         "line_valueth:",
         "detect_cut_off:",
         "resize:",
         "sleep_wait:",
-        "use_GPU:",
         "sep_valueth:",
         "sep_valueth2:",
+        "allowwidth_next:",
     };
 
     std::string input_filename;
@@ -499,6 +344,9 @@ int main(int argc, char **argv)
                 else if (s == "space_cutoff:") {
                     space_cutoff = v;
                 }
+                else if (s == "emphasis_cutoff:") {
+                    emphasis_cutoff = v;
+                }
                 else if (s == "line_valueth:") {
                     line_valueth = v;
                 }
@@ -516,6 +364,9 @@ int main(int argc, char **argv)
                 }
                 else if (s == "sep_valueth2:") {
                     sep_valueth2 = v;
+                }
+                else if (s == "allowwidth_next:") {
+                    allowwidth_next = v;
                 }
                 goto nextloop;
             }
