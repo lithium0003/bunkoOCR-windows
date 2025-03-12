@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.button1 = new System.Windows.Forms.Button();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.textBox1 = new System.Windows.Forms.TextBox();
@@ -35,6 +36,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.button2 = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.button_start = new System.Windows.Forms.Button();
             this.button_kill = new System.Windows.Forms.Button();
             this.button_config = new System.Windows.Forms.Button();
             this.splitter2 = new System.Windows.Forms.Splitter();
@@ -65,10 +67,12 @@
             // textBox1
             // 
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.textBox1.Location = new System.Drawing.Point(0, 875);
+            this.textBox1.Location = new System.Drawing.Point(0, 755);
+            this.textBox1.MaxLength = 0;
+            this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
-            this.textBox1.Size = new System.Drawing.Size(1290, 25);
+            this.textBox1.Size = new System.Drawing.Size(1290, 145);
             this.textBox1.TabIndex = 1;
             // 
             // label1
@@ -104,6 +108,7 @@
             // 
             // panel2
             // 
+            this.panel2.Controls.Add(this.button_start);
             this.panel2.Controls.Add(this.button_kill);
             this.panel2.Controls.Add(this.button_config);
             this.panel2.Controls.Add(this.button1);
@@ -116,9 +121,20 @@
             this.panel2.Size = new System.Drawing.Size(1290, 87);
             this.panel2.TabIndex = 8;
             // 
+            // button_start
+            // 
+            this.button_start.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.button_start.Location = new System.Drawing.Point(210, 0);
+            this.button_start.Name = "button_start";
+            this.button_start.Size = new System.Drawing.Size(163, 57);
+            this.button_start.TabIndex = 9;
+            this.button_start.Text = "Start";
+            this.button_start.UseVisualStyleBackColor = true;
+            this.button_start.Click += new System.EventHandler(this.button_start_Click);
+            // 
             // button_kill
             // 
-            this.button_kill.Location = new System.Drawing.Point(287, 3);
+            this.button_kill.Location = new System.Drawing.Point(457, 3);
             this.button_kill.Name = "button_kill";
             this.button_kill.Size = new System.Drawing.Size(75, 57);
             this.button_kill.TabIndex = 8;
@@ -129,7 +145,7 @@
             // button_config
             // 
             this.button_config.Font = new System.Drawing.Font("MS UI Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.button_config.Location = new System.Drawing.Point(508, 3);
+            this.button_config.Location = new System.Drawing.Point(739, 3);
             this.button_config.Name = "button_config";
             this.button_config.Size = new System.Drawing.Size(163, 57);
             this.button_config.TabIndex = 7;
@@ -154,7 +170,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 90);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1290, 785);
+            this.panel1.Size = new System.Drawing.Size(1290, 665);
             this.panel1.TabIndex = 10;
             // 
             // listBox2
@@ -164,14 +180,14 @@
             this.listBox2.ItemHeight = 18;
             this.listBox2.Location = new System.Drawing.Point(591, 0);
             this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(699, 785);
+            this.listBox2.Size = new System.Drawing.Size(699, 665);
             this.listBox2.TabIndex = 2;
             // 
             // splitter1
             // 
             this.splitter1.Location = new System.Drawing.Point(581, 0);
             this.splitter1.Name = "splitter1";
-            this.splitter1.Size = new System.Drawing.Size(10, 785);
+            this.splitter1.Size = new System.Drawing.Size(10, 665);
             this.splitter1.TabIndex = 1;
             this.splitter1.TabStop = false;
             // 
@@ -182,7 +198,7 @@
             this.listBox1.ItemHeight = 18;
             this.listBox1.Location = new System.Drawing.Point(0, 0);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(581, 785);
+            this.listBox1.Size = new System.Drawing.Size(581, 665);
             this.listBox1.TabIndex = 0;
             // 
             // Form1
@@ -195,8 +211,9 @@
             this.Controls.Add(this.splitter2);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.textBox1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "bunkoOCR";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Form1_DragEnter);
@@ -224,6 +241,7 @@
         private System.Windows.Forms.ListBox listBox1;
         private System.Windows.Forms.Button button_config;
         private System.Windows.Forms.Button button_kill;
+        private System.Windows.Forms.Button button_start;
     }
 }
 

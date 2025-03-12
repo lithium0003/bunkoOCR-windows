@@ -58,15 +58,18 @@
             this.numericUpDown_detect_cut_off = new System.Windows.Forms.NumericUpDown();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.checkBox_ausostart = new System.Windows.Forms.CheckBox();
             this.label14 = new System.Windows.Forms.Label();
             this.numericUpDown_sleep_wait = new System.Windows.Forms.NumericUpDown();
             this.label13 = new System.Windows.Forms.Label();
             this.numericUpDown_resize = new System.Windows.Forms.NumericUpDown();
             this.label12 = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.label_rubysample = new System.Windows.Forms.Label();
+            this.checkBox_rawoutput = new System.Windows.Forms.CheckBox();
             this.label17 = new System.Windows.Forms.Label();
             this.textBox_rubyafter = new System.Windows.Forms.TextBox();
+            this.checkBox_output_ruby = new System.Windows.Forms.CheckBox();
+            this.label_rubysample = new System.Windows.Forms.Label();
             this.label16 = new System.Windows.Forms.Label();
             this.textBox_rubysepatator = new System.Windows.Forms.TextBox();
             this.label15 = new System.Windows.Forms.Label();
@@ -75,8 +78,12 @@
             this.radioButton_aozora = new System.Windows.Forms.RadioButton();
             this.radioButton_no_ruby = new System.Windows.Forms.RadioButton();
             this.checkBox_output_text = new System.Windows.Forms.CheckBox();
-            this.checkBox_output_ruby = new System.Windows.Forms.CheckBox();
-            this.checkBox_rawoutput = new System.Windows.Forms.CheckBox();
+            this.textBox_outputdir = new System.Windows.Forms.TextBox();
+            this.label18 = new System.Windows.Forms.Label();
+            this.button_select_outputdir = new System.Windows.Forms.Button();
+            this.radioButton_override = new System.Windows.Forms.RadioButton();
+            this.radioButton_addnumber = new System.Windows.Forms.RadioButton();
+            this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_GPUid)).BeginInit();
             this.groupBox2.SuspendLayout();
@@ -100,7 +107,7 @@
             // 
             this.button1.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.button1.Font = new System.Drawing.Font("MS UI Gothic", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.button1.Location = new System.Drawing.Point(540, 445);
+            this.button1.Location = new System.Drawing.Point(511, 537);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(135, 67);
             this.button1.TabIndex = 0;
@@ -539,17 +546,33 @@
             // 
             // groupBox3
             // 
+            this.groupBox3.Controls.Add(this.radioButton_addnumber);
+            this.groupBox3.Controls.Add(this.radioButton_override);
+            this.groupBox3.Controls.Add(this.button_select_outputdir);
+            this.groupBox3.Controls.Add(this.label18);
+            this.groupBox3.Controls.Add(this.textBox_outputdir);
+            this.groupBox3.Controls.Add(this.checkBox_ausostart);
             this.groupBox3.Controls.Add(this.label14);
             this.groupBox3.Controls.Add(this.numericUpDown_sleep_wait);
             this.groupBox3.Controls.Add(this.label13);
             this.groupBox3.Controls.Add(this.numericUpDown_resize);
             this.groupBox3.Controls.Add(this.label12);
-            this.groupBox3.Location = new System.Drawing.Point(334, 12);
+            this.groupBox3.Location = new System.Drawing.Point(314, 12);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(292, 106);
+            this.groupBox3.Size = new System.Drawing.Size(332, 204);
             this.groupBox3.TabIndex = 3;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Process parameter";
+            // 
+            // checkBox_ausostart
+            // 
+            this.checkBox_ausostart.AutoSize = true;
+            this.checkBox_ausostart.Location = new System.Drawing.Point(6, 88);
+            this.checkBox_ausostart.Name = "checkBox_ausostart";
+            this.checkBox_ausostart.Size = new System.Drawing.Size(192, 22);
+            this.checkBox_ausostart.TabIndex = 7;
+            this.checkBox_ausostart.Text = "Auto start to process";
+            this.checkBox_ausostart.UseVisualStyleBackColor = true;
             // 
             // label14
             // 
@@ -634,21 +657,23 @@
             this.groupBox4.Controls.Add(this.radioButton_aozora);
             this.groupBox4.Controls.Add(this.radioButton_no_ruby);
             this.groupBox4.Controls.Add(this.checkBox_output_text);
-            this.groupBox4.Location = new System.Drawing.Point(311, 130);
+            this.groupBox4.Location = new System.Drawing.Point(295, 226);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(351, 309);
             this.groupBox4.TabIndex = 4;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Post process";
             // 
-            // label_rubysample
+            // checkBox_rawoutput
             // 
-            this.label_rubysample.AutoSize = true;
-            this.label_rubysample.Location = new System.Drawing.Point(16, 281);
-            this.label_rubysample.Name = "label_rubysample";
-            this.label_rubysample.Size = new System.Drawing.Size(60, 18);
-            this.label_rubysample.TabIndex = 10;
-            this.label_rubysample.Text = "sample";
+            this.checkBox_rawoutput.AutoSize = true;
+            this.checkBox_rawoutput.Location = new System.Drawing.Point(6, 26);
+            this.checkBox_rawoutput.Name = "checkBox_rawoutput";
+            this.checkBox_rawoutput.Size = new System.Drawing.Size(119, 22);
+            this.checkBox_rawoutput.TabIndex = 12;
+            this.checkBox_rawoutput.Text = "Raw output";
+            this.checkBox_rawoutput.UseVisualStyleBackColor = true;
+            this.checkBox_rawoutput.CheckedChanged += new System.EventHandler(this.checkBox_rawoutput_CheckedChanged);
             // 
             // label17
             // 
@@ -666,6 +691,26 @@
             this.textBox_rubyafter.Size = new System.Drawing.Size(100, 25);
             this.textBox_rubyafter.TabIndex = 8;
             this.textBox_rubyafter.TextChanged += new System.EventHandler(this.textBox_rubyafter_TextChanged);
+            // 
+            // checkBox_output_ruby
+            // 
+            this.checkBox_output_ruby.AutoSize = true;
+            this.checkBox_output_ruby.Location = new System.Drawing.Point(39, 207);
+            this.checkBox_output_ruby.Name = "checkBox_output_ruby";
+            this.checkBox_output_ruby.Size = new System.Drawing.Size(120, 22);
+            this.checkBox_output_ruby.TabIndex = 11;
+            this.checkBox_output_ruby.Text = "output ruby";
+            this.checkBox_output_ruby.UseVisualStyleBackColor = true;
+            this.checkBox_output_ruby.CheckedChanged += new System.EventHandler(this.checkBox_output_ruby_CheckedChanged);
+            // 
+            // label_rubysample
+            // 
+            this.label_rubysample.AutoSize = true;
+            this.label_rubysample.Location = new System.Drawing.Point(16, 281);
+            this.label_rubysample.Name = "label_rubysample";
+            this.label_rubysample.Size = new System.Drawing.Size(60, 18);
+            this.label_rubysample.TabIndex = 10;
+            this.label_rubysample.Text = "sample";
             // 
             // label16
             // 
@@ -747,33 +792,59 @@
             this.checkBox_output_text.Text = "Output as text";
             this.checkBox_output_text.UseVisualStyleBackColor = true;
             // 
-            // checkBox_output_ruby
+            // textBox_outputdir
             // 
-            this.checkBox_output_ruby.AutoSize = true;
-            this.checkBox_output_ruby.Location = new System.Drawing.Point(39, 207);
-            this.checkBox_output_ruby.Name = "checkBox_output_ruby";
-            this.checkBox_output_ruby.Size = new System.Drawing.Size(120, 22);
-            this.checkBox_output_ruby.TabIndex = 11;
-            this.checkBox_output_ruby.Text = "output ruby";
-            this.checkBox_output_ruby.UseVisualStyleBackColor = true;
-            this.checkBox_output_ruby.CheckedChanged += new System.EventHandler(this.checkBox_output_ruby_CheckedChanged);
+            this.textBox_outputdir.Location = new System.Drawing.Point(148, 116);
+            this.textBox_outputdir.Name = "textBox_outputdir";
+            this.textBox_outputdir.Size = new System.Drawing.Size(178, 25);
+            this.textBox_outputdir.TabIndex = 8;
             // 
-            // checkBox_rawoutput
+            // label18
             // 
-            this.checkBox_rawoutput.AutoSize = true;
-            this.checkBox_rawoutput.Location = new System.Drawing.Point(6, 26);
-            this.checkBox_rawoutput.Name = "checkBox_rawoutput";
-            this.checkBox_rawoutput.Size = new System.Drawing.Size(119, 22);
-            this.checkBox_rawoutput.TabIndex = 12;
-            this.checkBox_rawoutput.Text = "Raw output";
-            this.checkBox_rawoutput.UseVisualStyleBackColor = true;
-            this.checkBox_rawoutput.CheckedChanged += new System.EventHandler(this.checkBox_rawoutput_CheckedChanged);
+            this.label18.AutoSize = true;
+            this.label18.Location = new System.Drawing.Point(6, 123);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(84, 18);
+            this.label18.TabIndex = 9;
+            this.label18.Text = "Output dir";
+            // 
+            // button_select_outputdir
+            // 
+            this.button_select_outputdir.Location = new System.Drawing.Point(102, 109);
+            this.button_select_outputdir.Name = "button_select_outputdir";
+            this.button_select_outputdir.Size = new System.Drawing.Size(40, 38);
+            this.button_select_outputdir.TabIndex = 10;
+            this.button_select_outputdir.Text = "...";
+            this.button_select_outputdir.UseVisualStyleBackColor = true;
+            this.button_select_outputdir.Click += new System.EventHandler(this.button_select_outputdir_Click);
+            // 
+            // radioButton_override
+            // 
+            this.radioButton_override.AutoSize = true;
+            this.radioButton_override.Location = new System.Drawing.Point(31, 153);
+            this.radioButton_override.Name = "radioButton_override";
+            this.radioButton_override.Size = new System.Drawing.Size(201, 22);
+            this.radioButton_override.TabIndex = 11;
+            this.radioButton_override.TabStop = true;
+            this.radioButton_override.Text = "Override if same name";
+            this.radioButton_override.UseVisualStyleBackColor = true;
+            // 
+            // radioButton_addnumber
+            // 
+            this.radioButton_addnumber.AutoSize = true;
+            this.radioButton_addnumber.Location = new System.Drawing.Point(31, 181);
+            this.radioButton_addnumber.Name = "radioButton_addnumber";
+            this.radioButton_addnumber.Size = new System.Drawing.Size(225, 22);
+            this.radioButton_addnumber.TabIndex = 12;
+            this.radioButton_addnumber.TabStop = true;
+            this.radioButton_addnumber.Text = "Add number if same name";
+            this.radioButton_addnumber.UseVisualStyleBackColor = true;
             // 
             // Form3
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(687, 524);
+            this.ClientSize = new System.Drawing.Size(660, 616);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
@@ -857,5 +928,12 @@
         private System.Windows.Forms.TextBox textBox_rubysepatator;
         private System.Windows.Forms.CheckBox checkBox_output_ruby;
         private System.Windows.Forms.CheckBox checkBox_rawoutput;
+        private System.Windows.Forms.CheckBox checkBox_ausostart;
+        private System.Windows.Forms.RadioButton radioButton_addnumber;
+        private System.Windows.Forms.RadioButton radioButton_override;
+        private System.Windows.Forms.Button button_select_outputdir;
+        private System.Windows.Forms.Label label18;
+        private System.Windows.Forms.TextBox textBox_outputdir;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
     }
 }

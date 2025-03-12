@@ -24,6 +24,8 @@ namespace bunkoOCR
         private BinaryWriter _writer;
         private Process _process;
         private ConcurrentQueue<byte[]> _queue;
+        private List<string> process_list = new List<string>();
+        private Dictionary<string, string> output_list = new Dictionary<string, string>();
 
         bool ready = false;
         bool restart = false;
@@ -31,6 +33,9 @@ namespace bunkoOCR
         void InitializeProcess()
         {
             var dict = ConfigReader.Load();
+
+            bool autostart = dict["autostart"] > 0;
+            button_start.Enabled = !autostart;
 
             bool useTensorRT = dict["use_TensorRT"] > 0;
             bool useCUDA = dict["use_CUDA"] > 0;
@@ -165,12 +170,61 @@ namespace bunkoOCR
             InitializeProcess();
         }
 
+        private void SendToEngine(string filename)
+        {
+            var dict = ConfigReader.LoadPathSetting();
+            var output_dir = dict["output_dir"];
+            var override_flag = dict["override"] == "1";
+            var output_filename = "";
+
+            if(output_dir != "")
+            {
+                Directory.CreateDirectory(output_dir);
+                output_filename = Path.Combine(output_dir, Path.GetFileName(filename) + ".json");
+
+                if(File.Exists(output_filename) && !override_flag)
+                {
+                    var count = 1;
+                    while(File.Exists(output_filename))
+                    {
+                        output_filename = Path.Combine(output_dir, Path.GetFileName(filename) + "." + count.ToString() + ".json");
+                        count += 1;
+                    }
+                }
+            }
+            else if(!override_flag)
+            {
+                output_filename = filename + ".json";
+
+                if (File.Exists(output_filename))
+                {
+                    var count = 1;
+                    while (File.Exists(output_filename))
+                    {
+                        output_filename = filename + "." + count.ToString() + ".json";
+                        count += 1;
+                    }
+                }
+            }
+
+            if (process_list.Contains(filename))
+            {
+                return;
+            }
+            process_list.Add(filename);
+            output_list[filename] = output_filename;
+            var b = Encoding.UTF8.GetBytes(filename + "\r\n" + output_filename + "\r\n");
+            _queue.Enqueue(b);
+        }
+
         private void process(string filename)
         {
             button_config.Enabled = false;
             listBox1.Items.Add(filename);
-            var b = Encoding.UTF8.GetBytes(filename + "\r\n");
-            _queue.Enqueue(b);
+            if(!button_start.Enabled)
+            {
+                SendToEngine(filename);
+            }
         }
 
         public void OnStdOut(object sender, DataReceivedEventArgs e)
@@ -194,6 +248,7 @@ namespace bunkoOCR
                 {
                     listBox1.Items.Remove(donefile);
                 }
+                process_list.Remove(donefile);
                 if (listBox2.InvokeRequired)
                 {
                     listBox2.Invoke((MethodInvoker)(() =>
@@ -224,6 +279,7 @@ namespace bunkoOCR
                 {
                     listBox1.Items.Remove(errorfile);
                 }
+                process_list.Remove(errorfile);
                 errorfile = "ERROR: " + errorfile;
                 if (listBox2.InvokeRequired)
                 {
@@ -241,12 +297,20 @@ namespace bunkoOCR
             {
                 textBox1.Invoke((MethodInvoker)(() =>
                 {
-                    textBox1.Text = e.Data;
+                    var lines = textBox1.Lines.ToList();
+                    lines.Add(e.Data);
+                    textBox1.Lines = lines.ToArray();
+                    textBox1.SelectionStart = textBox1.Text.Length;
+                    textBox1.ScrollToCaret();
                 }));
             }
             else
             {
-                textBox1.Text = e.Data;
+                var lines = textBox1.Lines.ToList();
+                lines.Add(e.Data);
+                textBox1.Lines = lines.ToArray();
+                textBox1.SelectionStart = textBox1.Text.Length;
+                textBox1.ScrollToCaret();
             }
             if (listBox1.Items.Count == 0)
             {
@@ -287,7 +351,15 @@ namespace bunkoOCR
                 }
             }
 
-            string jsonfile = filename + ".json";
+            if (!output_list.TryGetValue(filename, out var jsonfile))
+            {
+                return;
+            }
+            if (jsonfile == "")
+            {
+                jsonfile = filename + ".json";
+            }
+
             if (File.Exists(jsonfile))
             {
                 var jsonString = File.ReadAllText(jsonfile);
@@ -315,7 +387,7 @@ namespace bunkoOCR
 
                 if(output_text)
                 {
-                    var txtfilename = filename + ".txt";
+                    var txtfilename = Path.ChangeExtension(jsonfile, ".txt");
                     File.WriteAllText(txtfilename, result.text);
                 }
             }
@@ -340,7 +412,14 @@ namespace bunkoOCR
                 {
                     return;
                 }
-                string jsonfile = donefile + ".json";
+                if(!output_list.TryGetValue(donefile, out var jsonfile))
+                {
+                    return;
+                }
+                if(jsonfile == "")
+                {
+                    jsonfile = donefile + ".json";
+                }
                 if (File.Exists(jsonfile))
                 {
                     var jsonString = File.ReadAllText(jsonfile, Encoding.UTF8);
@@ -389,45 +468,6 @@ namespace bunkoOCR
             }
         }
 
-        //private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        //{
-        //    textBox2.Text = _dictionary[(string)comboBox1.SelectedItem].ToString();
-        //}
-
-        //private void button3_Click(object sender, EventArgs e)
-        //{
-        //    var param = (string)comboBox1.SelectedItem;
-        //    if (string.IsNullOrEmpty(param)) { return; }
-        //    try
-        //    {
-        //        var value = double.Parse(textBox2.Text);
-
-        //        var str = param+":"+value.ToString();
-        //        _dictionary[param] = value;
-        //        var b = Encoding.UTF8.GetBytes(str + "\r\n");
-        //        _queue.Enqueue(b);
-        //    }
-        //    catch (Exception)
-        //    {
-        //        return;
-        //    }
-        //}
-
-        //private void checkBox1_CheckedChanged(object sender, EventArgs e)
-        //{
-        //    txtoutput = checkBox1.Checked;
-        //}
-
-        //private void checkBox2_CheckedChanged(object sender, EventArgs e)
-        //{
-        //    aozoraoutput = checkBox2.Checked;
-        //}
-
-        //private void checkBox3_CheckedChanged(object sender, EventArgs e)
-        //{
-        //    htmloutput = checkBox3.Checked;
-        //}
-
         private void ReloadEngine()
         {
             listBox1.Items.Clear();
@@ -454,6 +494,13 @@ namespace bunkoOCR
         private void button_kill_Click(object sender, EventArgs e)
         {
             ReloadEngine();
+        }
+
+        private void button_start_Click(object sender, EventArgs e)
+        {
+            foreach(string filename in listBox1.Items) {
+                SendToEngine(filename);
+            }
         }
     }
 

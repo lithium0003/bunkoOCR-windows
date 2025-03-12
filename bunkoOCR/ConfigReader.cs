@@ -17,6 +17,8 @@ namespace bunkoOCR
             dict.Remove("use_DirectML");
             dict.Remove("use_OpenVINO");
             dict.Remove("DML_GPU_id");
+
+            dict.Remove("autostart");
             return dict;
         }
 
@@ -26,7 +28,7 @@ namespace bunkoOCR
             var dictionary = new Dictionary<string, double>
             {
                 ["detect_cut_off"] = 0.35,
-                ["blank_cutoff"] = 15,
+                ["blank_cutoff"] = 20,
                 ["ruby_cutoff"] = 0.25,
                 ["rubybase_cutoff"] = 0.75,
                 ["space_cutoff"] = 0.5,
@@ -43,6 +45,8 @@ namespace bunkoOCR
                 ["use_DirectML"] = 1,
                 ["DML_GPU_id"] = -1,
                 ["use_OpenVINO"] = 1,
+
+                ["autostart"] = 1,
             };
 
             string[] lines;
@@ -133,6 +137,55 @@ namespace bunkoOCR
         static public void SaveRubyTreat(Dictionary<string, string> dict)
         {
             using (StreamWriter writer = new StreamWriter("ruby.config"))
+            {
+                foreach (string key in dict.Keys)
+                {
+                    var value = dict[key];
+                    writer.WriteLine(key + ":" + value);
+                }
+            }
+        }
+
+
+        static public Dictionary<string, string> LoadPathSetting()
+        {
+            var dictionary = new Dictionary<string, string>
+            {
+                ["output_dir"] = "",
+                ["override"] = "0",
+            };
+
+            string[] lines;
+            try
+            {
+                lines = File.ReadAllLines("path.config");
+            }
+            catch
+            {
+                lines = new string[0];
+            }
+
+            foreach (var line in lines)
+            {
+                // keyとvalueの区切り目を見つける
+                var pos = line.IndexOf(':');
+                if (pos < 0)
+                {
+                    continue;
+                }
+
+                // key-valueを一覧に追加
+                var key = line.Substring(0, pos);
+                var val = line.Substring(pos + 1);
+                dictionary[key] = val;
+            }
+
+            return dictionary;
+        }
+
+        static public void SavePathSetting(Dictionary<string, string> dict)
+        {
+            using (StreamWriter writer = new StreamWriter("path.config"))
             {
                 foreach (string key in dict.Keys)
                 {

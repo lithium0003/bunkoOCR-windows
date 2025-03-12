@@ -226,7 +226,7 @@ int Transformer::run_model(OCR_info &info, const std::vector<float>& features, c
             continue;
         }
 
-        std::cout << "transformer " << (double)cur_i / max_features * 100 << "% " << prev_j << " " << cur_i << " " << cur_j << "/" << max_features << std::endl;
+        std::cout << "transformer " << (double)cur_j / max_features * 100 << "% " << prev_j << " " << cur_i << " " << cur_j << "/" << max_features << std::endl;
         std::fill(encoder_input.begin(), encoder_input.end(), 0);
         auto it = std::copy(SOT.begin(), SOT.end(), encoder_input.begin());
         for (int i = cur_i; i < cur_j; i++) {

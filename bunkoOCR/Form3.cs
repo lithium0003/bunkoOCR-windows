@@ -15,6 +15,7 @@ namespace bunkoOCR
     {
         private Dictionary<string,double> dict = ConfigReader.Load();
         private Dictionary<string, string> dict2 = ConfigReader.LoadRubyTreat();
+        private Dictionary<string, string> dict3 = ConfigReader.LoadPathSetting();
 
         public Form3()
         {
@@ -33,6 +34,8 @@ namespace bunkoOCR
                 GPU_id = -1;
             }
             numericUpDown_GPUid.Value = GPU_id;
+
+            checkBox_ausostart.Checked = dict["autostart"] > 0;
 
             numericUpDown_detect_cut_off.Value = (decimal)dict["detect_cut_off"];
             numericUpDown_blank_cutoff.Value = (decimal)dict["blank_cutoff"];
@@ -86,6 +89,16 @@ namespace bunkoOCR
             }
 
             print_label_rubysample();
+
+            textBox_outputdir.Text = dict3["output_dir"];
+            if (dict3["override"] == "1")
+            {
+                radioButton_override.Checked = true;
+            }
+            else
+            {
+                radioButton_addnumber.Checked = true;
+            }
         }
 
         private void print_label_rubysample()
@@ -112,6 +125,8 @@ namespace bunkoOCR
             dict["use_OpenVINO"] = checkBox_OpneVINO.Checked ? 1 : 0;
             dict["DML_GPU_id"] = (double)numericUpDown_GPUid.Value;
 
+            dict["autostart"] = checkBox_ausostart.Checked ? 1 : 0;
+
             dict["detect_cut_off"] = (double)numericUpDown_detect_cut_off.Value;
             dict["blank_cutoff"] = (double)numericUpDown_blank_cutoff.Value;
             dict["ruby_cutoff"] = (double)numericUpDown_ruby_cutoff.Value;
@@ -132,8 +147,12 @@ namespace bunkoOCR
             dict2["after_ruby"] = textBox_rubyafter.Text;
             dict2["output_ruby"] = checkBox_output_ruby.Checked ? "1" : "0";
 
+            dict3["output_dir"] = textBox_outputdir.Text;
+            dict3["override"] = radioButton_override.Checked ? "1" : "0";
+
             ConfigReader.Save(dict);
             ConfigReader.SaveRubyTreat(dict2);
+            ConfigReader.SavePathSetting(dict3);
         }
 
         private void radioButton_no_ruby_CheckedChanged(object sender, EventArgs e)
@@ -230,6 +249,15 @@ namespace bunkoOCR
             }
 
             print_label_rubysample();
+        }
+
+        private void button_select_outputdir_Click(object sender, EventArgs e)
+        {
+            folderBrowserDialog1.SelectedPath = textBox_outputdir.Text;
+            if(folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+            {
+                textBox_outputdir.Text = folderBrowserDialog1.SelectedPath;
+            }
         }
     }
 }

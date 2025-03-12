@@ -116,11 +116,19 @@ void make_feature_input(const std::vector<int32_t>& boxes, const std::vector<flo
 }
 
 
-int process(std::string input_filename, TextDetector& model1, CodeDecoder& model2, Transformer& model3)
+int process(std::string input_filename, std::string output_filename, TextDetector& model1, CodeDecoder& model2, Transformer& model3)
 {
     int width = 0;
     int height = 0;
     std::wstring wfilename = ToUnicodeStr(input_filename);
+    std::wstring wjson_filename;
+    if (output_filename.empty()) {
+        wjson_filename = wfilename + TEXT(".json");
+    }
+    else {
+        wjson_filename = ToUnicodeStr(output_filename);
+    }
+
     auto bitmap = Gdiplus::Bitmap::FromFile(wfilename.c_str(), true);
     if (bitmap == nullptr) {
         std::cerr << "faild to load image " << input_filename << std::endl;
@@ -246,7 +254,7 @@ int process(std::string input_filename, TextDetector& model1, CodeDecoder& model
         box.h /= resize;
     }
 
-    std::ofstream ofs(wfilename + TEXT(".json"));
+    std::ofstream ofs(wjson_filename);
     WriteJson(ofs, info);
 
     std::cout << "done: " << input_filename << std::endl;
@@ -326,12 +334,14 @@ int main(int argc, char **argv)
     };
 
     std::string input_filename;
-    while (std::getline(std::cin, input_filename)) {
+    std::string output_filename;
+    std::string line;
+    while (std::getline(std::cin, line)) {
         int ret;
         for (auto s : params) {
-            if (input_filename.size() >= s.size() && std::equal(std::begin(s), std::end(s), std::begin(input_filename))) {
+            if (line.size() >= s.size() && std::equal(std::begin(s), std::end(s), std::begin(line))) {
                 double v;
-                std::stringstream(input_filename.substr(s.size())) >> v;
+                std::stringstream(line.substr(s.size())) >> v;
                 if (s == "blank_cutoff:") {
                     blank_cutoff = v;
                 }
@@ -371,11 +381,19 @@ int main(int argc, char **argv)
                 goto nextloop;
             }
         }
+        if (input_filename.empty()) {
+            input_filename = line;
+            continue;
+        }
+        output_filename = line;
         
-        ret = process(input_filename, model1, model2, model3);
+        ret = process(input_filename, output_filename, model1, model2, model3);
         if (ret != 0) {
             std::cout << "error: " << input_filename << std::endl;
         }
+        input_filename.clear();
+        output_filename.clear();
+
         if (sleep_wait > 0) {
             Sleep(sleep_wait * 1000);
         }

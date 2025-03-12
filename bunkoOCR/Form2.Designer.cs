@@ -47,7 +47,7 @@
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.webBrowser1);
             this.Name = "Form2";
-            this.Text = "Form2";
+            this.Text = "Result view";
             this.ResumeLayout(false);
 
         }
