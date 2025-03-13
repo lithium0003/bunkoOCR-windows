@@ -24,8 +24,7 @@ namespace bunkoOCR
         private BinaryWriter _writer;
         private Process _process;
         private ConcurrentQueue<byte[]> _queue;
-        private List<string> process_list = new List<string>();
-        private Dictionary<string, string> output_list = new Dictionary<string, string>();
+        private ConcurrentDictionary<string, string> _output_list = new ConcurrentDictionary<string, string>();
 
         bool ready = false;
         bool restart = false;
@@ -35,7 +34,17 @@ namespace bunkoOCR
             var dict = ConfigReader.Load();
 
             bool autostart = dict["autostart"] > 0;
-            button_start.Enabled = !autostart;
+            if (button_start.InvokeRequired)
+            {
+                button_start.Invoke((MethodInvoker)(() =>
+                {
+                    button_start.Enabled = !autostart;
+                }));
+            }
+            else
+            {
+                button_start.Enabled = !autostart;
+            }
 
             bool useTensorRT = dict["use_TensorRT"] > 0;
             bool useCUDA = dict["use_CUDA"] > 0;
@@ -114,13 +123,14 @@ namespace bunkoOCR
                     {
                         await Task.Delay(1000);
                     }
+                    var str = "";
                     foreach (string key in dict.Keys)
                     {
                         var value = dict[key];
-                        var str = key + ":" + value.ToString() + "\r\n";
-                        var b = Encoding.UTF8.GetBytes(str);
-                        _queue.Enqueue(b);
+                        str += key + ":" + value.ToString() + "\r\n";
                     }
+                    var b = Encoding.UTF8.GetBytes(str);
+                    _queue.Enqueue(b);
                 });
 
                 using (var process = new Process())
@@ -170,7 +180,7 @@ namespace bunkoOCR
             InitializeProcess();
         }
 
-        private void SendToEngine(string filename)
+        private bool SendToEngine(string filename)
         {
             var dict = ConfigReader.LoadPathSetting();
             var output_dir = dict["output_dir"];
@@ -207,23 +217,31 @@ namespace bunkoOCR
                 }
             }
 
-            if (process_list.Contains(filename))
+            if(!_output_list.TryAdd(filename, output_filename))
             {
-                return;
+                return false;
             }
-            process_list.Add(filename);
-            output_list[filename] = output_filename;
             var b = Encoding.UTF8.GetBytes(filename + "\r\n" + output_filename + "\r\n");
             _queue.Enqueue(b);
+            return true;
         }
 
         private void process(string filename)
         {
             button_config.Enabled = false;
-            listBox1.Items.Add(filename);
-            if(!button_start.Enabled)
+            if(button_start.Enabled)
             {
-                SendToEngine(filename);
+                if(!listBox1.Items.Contains(filename))
+                {
+                    listBox1.Items.Add(filename);
+                }
+            }
+            else
+            {
+                if(SendToEngine(filename))
+                {
+                    listBox1.Items.Add(filename);
+                }
             }
         }
 
@@ -248,22 +266,25 @@ namespace bunkoOCR
                 {
                     listBox1.Items.Remove(donefile);
                 }
-                process_list.Remove(donefile);
-                if (listBox2.InvokeRequired)
+                if (_output_list.TryRemove(donefile, out var jsonfile))
                 {
-                    listBox2.Invoke((MethodInvoker)(() =>
+                    Task.Run(() =>
                     {
-                        listBox2.Items.Add(donefile);
-                    }));
+                        postprocess(donefile, jsonfile);
+
+                        if (listBox2.InvokeRequired)
+                        {
+                            listBox2.Invoke((MethodInvoker)(() =>
+                            {
+                                listBox2.Items.Add(jsonfile);
+                            }));
+                        }
+                        else
+                        {
+                            listBox2.Items.Add(jsonfile);
+                        }
+                    });
                 }
-                else
-                {
-                    listBox2.Items.Add(donefile);
-                }
-                Task.Run(() =>
-                {
-                    postprocess(donefile);
-                });
             }
             if (e.Data.StartsWith("error: "))
             {
@@ -279,7 +300,7 @@ namespace bunkoOCR
                 {
                     listBox1.Items.Remove(errorfile);
                 }
-                process_list.Remove(errorfile);
+                _output_list.TryRemove(errorfile, out var jsonfile);
                 errorfile = "ERROR: " + errorfile;
                 if (listBox2.InvokeRequired)
                 {
@@ -328,7 +349,7 @@ namespace bunkoOCR
             }
         }
 
-        private void postprocess(string filename)
+        private void postprocess(string filename, string jsonfile)
         {
             var dict = ConfigReader.LoadRubyTreat();
 
@@ -351,10 +372,6 @@ namespace bunkoOCR
                 }
             }
 
-            if (!output_list.TryGetValue(filename, out var jsonfile))
-            {
-                return;
-            }
             if (jsonfile == "")
             {
                 jsonfile = filename + ".json";
@@ -407,18 +424,10 @@ namespace bunkoOCR
         {
             if(listBox2.SelectedIndex >= 0)
             {
-                string donefile = listBox2.SelectedItem.ToString();
-                if(donefile.StartsWith("ERROR: "))
+                string jsonfile = listBox2.SelectedItem.ToString();
+                if(jsonfile.StartsWith("ERROR: "))
                 {
                     return;
-                }
-                if(!output_list.TryGetValue(donefile, out var jsonfile))
-                {
-                    return;
-                }
-                if(jsonfile == "")
-                {
-                    jsonfile = donefile + ".json";
                 }
                 if (File.Exists(jsonfile))
                 {
@@ -432,7 +441,7 @@ namespace bunkoOCR
                     htmlstr = Regex.Replace(htmlstr, "\uFFF9(.*?)\uFFFA(.*?)\uFFFB", "<ruby>$1<rt>$2</rt></ruby>");
                     htmlstr = "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n<meta charset=\"utf-8\">\r\n</head>\r\n<body>\r\n" + htmlstr + "</body>\r\n</html>";
                     var form2 = new Form2();
-                    form2.Text = donefile;
+                    form2.Text = jsonfile;
                     form2.load_text(htmlstr);
                     form2.Show();
                 }
